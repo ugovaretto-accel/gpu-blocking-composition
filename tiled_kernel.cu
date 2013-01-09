@@ -55,7 +55,11 @@ __global__ tile_apply( REAL_T* in, REAL_T* out, int stencil_offset ) {
     //copy data into shared memory
     cache[cache_idx] = in[global_in_idx];   
     __syncthreads(); 
-    //apply stencil operator
+    //apply stencil operator to core space
+    if( threadIdx.x < stencil_offset 
+        || threadIdx.x >= (core_block_dim.x + stencil_offset)
+        || threadIdx.y < stencil_offset
+        || threadIdx.y >= (core_block_dim.y + stencil_offset) ) return;
     out[global_out_idx] = stencil_op(&cache[cache_idx], BLOCK_WIDTH); 
 }
 
