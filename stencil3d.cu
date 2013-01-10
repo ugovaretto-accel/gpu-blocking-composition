@@ -45,7 +45,7 @@ int main(int, char**) {
     cudaMalloc(&d_data_in, byte_size);
     cudaMalloc(&d_data_out, byte_size);
 
-    cudaMemcpy(d_data, h_data, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_data_in, h_data, cudaMemcpyHostToDevice);
     
     const dim3 threads_per_block = 
         dim3(threads_per_block_x, threads_per_block_y, threads_per_block_z);
