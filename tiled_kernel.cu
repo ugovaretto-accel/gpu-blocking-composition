@@ -1,17 +1,19 @@
-
-//0 load data into input buffer
-
-//1 copy data into shared memory
-
-//2 perform computation on shared memory data and copy into
-//  output buffer
-
-//3 download from output buffer
+#include <iostream>
+#include <vector>
+#include "CUDAEventTimer.h"
 
 
 typedef float REAL_T;
 
-__device__ REAL_T read_value( REAL_T* center, int width, int i, int j ) {
+__device__ REAL_T read_global_value(REAL_T* center, int i, int j) {
+    if( i < 0 ) i += gridDim.x;
+    else( i >= gridDim.x ) i -= gridDim.x;
+    if( j < 0 ) j += gridDim.y;
+    else( j >= gridDim.y ) j -= gridDim.y;   
+    return *(center + i + j * gridDim.x);
+}
+
+__device__ REAL_T read_value(REAL_T* center, int width, int i, int j) {
     return *(center + i + j * width);
 }
 
@@ -24,13 +26,22 @@ __device__ REAL_T stencil_op(REAL_T* center, int width) {
              - read_value(center, width, 1, 0));
 }
 
+__global__ void apply(REAL_T* in, REAL_T* out, int stencil_offset) {
+    //periodic boundary condition
+    int in_i = blockIdx.x * blockDim.x + threadIdx.x;
+    int in_j = blockIdx.y * blockDim.y + threadIdx.y;
+    int idx = in_i + in_j * gridDim.x;
+    out[idx] = stencil_op(&in[idx], gridDim.x); 
+}
+
+
 const int BLOCK_WIDTH = 16;
 const int BLOCK_HEIGHT = 16;
 const int CACHE_SIZE = BLOCK_WIDTH * BLOCK_HEIGHT;
 
-__global__ tile_apply( REAL_T* in, REAL_T* out, int stencil_offset ) {
+__global__ void tile_apply(REAL_T* in, REAL_T* out, int stencil_offset) {
 
-	__shared cache[CACHE_SIZE];
+    __shared cache[CACHE_SIZE];
 
     //block size = size of core space + ghost cells
     //stencil_offset = stencil width / 2
@@ -62,4 +73,34 @@ __global__ tile_apply( REAL_T* in, REAL_T* out, int stencil_offset ) {
         || threadIdx.y >= (core_block_dim.y + stencil_offset) ) return;
     out[global_out_idx] = stencil_op(&cache[cache_idx], BLOCK_WIDTH); 
 }
+
+
+int main(int, char**) {
+
+    int width = 1024;
+    int height = 1024;
+    size_t size = width * height;
+    size_t byte_size = size * sizeof(REAL_T);
+    std::vector< REAL_T > h_data(size, 0);
+
+    REAL_T* d_data_in = 0;
+    REAL_T* d_data_out = 0;
+    cudaMalloc(&d_data_in, byte_size);
+    cudaMalloc(&d_data_out, byte_size);
+
+    cudaMemcpy(d_data, h_data, cudaMemcpyHostToDevice);
+    const int stencil_offset = 1;
+    tile_apply<<<blocks, threads_per_block>>>(d_data_in, d_data_out, stencil_offset);
+
+    cudaMemcpy(h_data, d_data_out, byte_size, cudaMemcpyDeviceToHost);
+
+    cuddFree(d_data_out);
+    cudaFree(d_data_in);
+
+    cudaDeviceReset();
+    return 0;
+
+}
+
+
 
