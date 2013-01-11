@@ -33,11 +33,24 @@ struct laplacian_3d {
 
 int main(int argc, char** argv) {
 
-    if(argc != 7) {
+    if(argc < 7) {
         std::cout << "usage: " << argv[0]
-                  << " width height depth <threads per block x y z>" << std::endl;
+                  << " width height depth <threads per block x y z> [iteration axis]"
+                  << std::endl;
         return 1;
     }
+    char axis = 0;
+    //if axis is set then the launch configuration is done on a 2d slice
+    //and the kernel performs the iteration over the specified axis
+    if(argc == 8 ) {
+        axis = argv[7][0];
+        if(axis != 'x' && axis != 'y' && axis != 'z') {
+            std::cout << "axis must be one of either 'x', 'y', 'z'"
+                      << std::endl;
+            return 1;
+        }
+    } 
+
 
     const int ioffset = 3;
     const int joffset = 3;
@@ -61,27 +74,95 @@ int main(int argc, char** argv) {
     
     const dim3 threads_per_block = 
         dim3(threads_per_block_x, threads_per_block_y, threads_per_block_z);
-    //launch on core space only    
-    const dim3 blocks = compute_blocks(dim3(width - ioffset,
-                                            height - joffset,
-                                            depth - koffset),
-                                       threads_per_block);
-    const dim3 offset(ioffset, joffset, koffset);
-    const dim3 global_grid_size(width, height, depth);
 
     CUDAEventTimer et;
-    et.start();
-    do_all_3d_2_gpu<<<blocks, threads_per_block>>>(d_data_in,
-                                                   d_data_out,
-                                                   offset,
-                                                   global_grid_size,
-#ifdef FUNPTR                                                
-                                                   laplacian_3d);
-#else           
-                                                   laplacian_3d());
-#endif    
-    et.stop();
-    std::cout << et.elapsed() << std::endl;
+
+    if(axis == 0 ) {
+        //launch on core space only    
+        const dim3 blocks = compute_blocks(dim3(width - ioffset,
+                                                height - joffset,
+                                                depth - koffset),
+                                           threads_per_block);
+        const dim3 offset(ioffset, joffset, koffset);
+        const dim3 global_grid_size(width, height, depth);
+
+       
+        et.start();
+        do_all_3d_2_gpu<<<blocks, threads_per_block>>>(d_data_in,
+                                                       d_data_out,
+                                                       offset,
+                                                       global_grid_size,
+    #ifdef FUNPTR                                                
+                                                       laplacian_3d);
+    #else           
+                                                       laplacian_3d());
+    #endif    
+        et.stop();
+        std::cout << et.elapsed() << std::endl;
+    } else if(axis == 'x') {
+       //launch on core space only    
+        const dim3 blocks = compute_blocks(dim3(height - joffset,
+                                                depth - koffset),
+                                           threads_per_block);
+        const dim3 offset(ioffset, joffset, koffset);
+        const dim3 global_grid_size(width, height, depth);
+
+       
+        et.start();
+        do_all_3d_2_x_gpu<<<blocks, threads_per_block>>>(d_data_in,
+                                                         d_data_out,
+                                                         offset,
+                                                         global_grid_size,
+    #ifdef FUNPTR                                                
+                                                         laplacian_3d);
+    #else           
+                                                         laplacian_3d());
+    #endif    
+        et.stop();
+        std::cout << et.elapsed() << std::endl;
+    } else if(axis == 'y') {
+       //launch on core space only    
+        const dim3 blocks = compute_blocks(dim3(width - ioffset,
+                                                depth - koffset),
+                                           threads_per_block);
+        const dim3 offset(ioffset, joffset, koffset);
+        const dim3 global_grid_size(width, height, depth);
+
+       
+        et.start();
+        do_all_3d_2_y_gpu<<<blocks, threads_per_block>>>(d_data_in,
+                                                         d_data_out,
+                                                         offset,
+                                                         global_grid_size,
+    #ifdef FUNPTR                                                
+                                                         laplacian_3d);
+    #else           
+                                                         laplacian_3d());
+    #endif    
+        et.stop();
+        std::cout << et.elapsed() << std::endl;
+    } else if(axis == 'z') {
+       //launch on core space only    
+        const dim3 blocks = compute_blocks(dim3(width - ioffset,
+                                                height - joffset),
+                                           threads_per_block);
+        const dim3 offset(ioffset, joffset, koffset);
+        const dim3 global_grid_size(width, height, depth);
+
+       
+        et.start();
+        do_all_3d_2_z_gpu<<<blocks, threads_per_block>>>(d_data_in,
+                                                         d_data_out,
+                                                         offset,
+                                                         global_grid_size,
+    #ifdef FUNPTR                                                
+                                                         laplacian_3d);
+    #else           
+                                                         laplacian_3d());
+    #endif    
+        et.stop();
+        std::cout << et.elapsed() << std::endl;
+    }
     cudaMemcpy(&h_data[0], d_data_out, byte_size, cudaMemcpyDeviceToHost);
 
     cudaFree(d_data_out);

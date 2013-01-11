@@ -17,7 +17,7 @@ __global__ void do_all_3d_2_gpu(const T* in,
 
 //launch with size of 2d core space, iterates on z internally
 template < typename T, typename FunT > 
-__global__ void do_all_3d_z_2_gpu(const T* in,
+__global__ void do_all_3d_2_z_gpu(const T* in,
 	                              T* out,
 	                              dim3 offset,
 	                              dim3 global_grid_size, //core space + 2 * offset
@@ -35,7 +35,7 @@ __global__ void do_all_3d_z_2_gpu(const T* in,
 
 //launch with size of 2d core space, iterates on x internally
 template < typename T, typename FunT > 
-__global__ void do_all_3d_x_2_gpu(const T* in,
+__global__ void do_all_3d_2_x_gpu(const T* in,
 	                              T* out,
 	                              dim3 offset,
 	                              dim3 global_grid_size, //core space + 2 * offset
@@ -50,7 +50,7 @@ __global__ void do_all_3d_x_2_gpu(const T* in,
 
 //launch with size of 2d core space, iterates on x internally
 template < typename T, typename FunT > 
-__global__ void do_all_3d_y_2_gpu(const T* in,
+__global__ void do_all_3d_2_y_gpu(const T* in,
 	                              T* out,
 	                              dim3 offset,
 	                              dim3 global_grid_size, //core space + 2 * offset
