@@ -60,7 +60,8 @@ int main(int argc, char** argv) {
     const int depth = atoi(argv[3]) + koffset;
     const int threads_per_block_x = atoi(argv[4]);
     const int threads_per_block_y = atoi(argv[5]);
-    const int threads_per_block_z = atoi(argv[6]);
+    //set threads per block in z direction to zero if axis is set
+    const int threads_per_block_z = axis == 0 ? atoi(argv[6]) : 0;
     const size_t size = width * height * depth;
     const size_t byte_size = size * sizeof(REAL_T);
     std::vector< REAL_T > h_data(size, 0);
