@@ -71,14 +71,14 @@ int main(int argc, char** argv) {
 
     CUDAEventTimer et;
     et.start();
-    do_all_2_gpu<<<blocks, threads_per_block>>>(d_data_in,
-                                                d_data_out,
-                                                offset,
-                                                global_grid_size,
+    do_all_3d_2_gpu<<<blocks, threads_per_block>>>(d_data_in,
+                                                   d_data_out,
+                                                   offset,
+                                                   global_grid_size,
 #ifdef FUNPTR                                                
-                                                laplacian_3d);
+                                                   laplacian_3d);
 #else           
-                                                laplacian_3d());
+                                                   laplacian_3d());
 #endif    
     et.stop();
     std::cout << et.elapsed() << std::endl;
