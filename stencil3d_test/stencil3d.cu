@@ -5,26 +5,26 @@
 #include "../util/do_all_3d.h"
 #include "../util/stencil.h"
 
-typedef float REAL_T;
+typedef double REAL_T;
 
 #ifdef FUNPTR //supported since sm_20
 __host__ __device__ 
-REAL_T laplacian_3d(const REAL_T* center, dim3 grid_size) {
+REAL_T laplacian_3d(const REAL_T* grid, int idx, dim3 grid_size) {
 
-    return REAL_T(-6) * (*center)
-           + gv(center, 1, 0, 0, grid_size) - gv(center, -1, 0, 0, grid_size)
-           + gv(center, 0, 1, 0, grid_size) - gv(center, 0, -1, 0, grid_size)
-           + gv(center, 0, 0, 1, grid_size) - gv(center, 0, 0, -1, grid_size);
+    return REAL_T(-6) * grid[idx]
+           + gv(grid, idx, 1, 0, 0, grid_size) - gv(grid, idx, -1, 0, 0, grid_size)
+           + gv(grid, idx, 0, 1, 0, grid_size) - gv(grid, idx, 0, -1, 0, grid_size)
+           + gv(grid, idx, 0, 0, 1, grid_size) - gv(grid, idx, 0, 0, -1, grid_size);
 
 }
 #else
 struct laplacian_3d {
     __host__ __device__ 
-    REAL_T operator()(const REAL_T* center, dim3 grid_size) const{
-        return REAL_T(-6) * (*center)
-             + gv(center, 1, 0, 0, grid_size) - gv(center, -1, 0, 0, grid_size)
-             + gv(center, 0, 1, 0, grid_size) - gv(center, 0, -1, 0, grid_size)
-             + gv(center, 0, 0, 1, grid_size) - gv(center, 0, 0, -1, grid_size);
+    REAL_T operator()(const REAL_T* grid, int idx, dim3 grid_size) const{
+        return REAL_T(-6) * grid[idx]
+             + gv(grid, idx, 1, 0, 0, grid_size) - gv(grid, idx, -1, 0, 0, grid_size)
+             + gv(grid, idx, 0, 1, 0, grid_size) - gv(grid, idx, 0, -1, 0, grid_size)
+             + gv(grid, idx, 0, 0, 1, grid_size) - gv(grid, idx, 0, 0, -1, grid_size);
 
     }
 };
@@ -32,7 +32,7 @@ struct laplacian_3d {
 
 
 int main(int argc, char** argv) {
-
+    cudaDeviceReset();
     if(argc < 7) {
         std::cout << "usage: " << argv[0]
                   << " width height depth <threads per block x y z> [iteration axis]"
@@ -51,13 +51,14 @@ int main(int argc, char** argv) {
         }
     } 
 
-
+    //temporary for ease of testing with COSMO
     const int ioffset = 3;
     const int joffset = 3;
     const int koffset = 1;
-    const int width = atoi(argv[1]) + ioffset;
-    const int height = atoi(argv[2]) + joffset;
-    const int depth = atoi(argv[3]) + koffset;
+
+    const int width = atoi(argv[1]) + 2 * ioffset;
+    const int height = atoi(argv[2]) + 2 * joffset;
+    const int depth = atoi(argv[3]) + 2 * koffset;
     const int threads_per_block_x = atoi(argv[4]);
     const int threads_per_block_y = atoi(argv[5]);
     //set threads per block in z direction to zero if axis is set
@@ -80,9 +81,9 @@ int main(int argc, char** argv) {
 
     if(axis == 0 ) {
         //launch on core space only    
-        const dim3 blocks = compute_blocks(dim3(width - ioffset,
-                                                height - joffset,
-                                                depth - koffset),
+        const dim3 blocks = compute_blocks(dim3(width - 2 * ioffset,
+                                                height - 2 * joffset,
+                                                depth - 2 * koffset),
                                            threads_per_block);
         const dim3 offset(ioffset, joffset, koffset);
         const dim3 global_grid_size(width, height, depth);
@@ -97,13 +98,14 @@ int main(int argc, char** argv) {
                                                        laplacian_3d);
     #else           
                                                        laplacian_3d());
-    #endif    
+    #endif
+        cudaDeviceSynchronize();    
         et.stop();
         std::cout << et.elapsed() << std::endl;
     } else if(axis == 'x') {
        //launch on core space only    
-        const dim3 blocks = compute_blocks(dim3(height - joffset,
-                                                depth - koffset),
+        const dim3 blocks = compute_blocks(dim3(height - 2 * joffset,
+                                                depth - 2 * koffset),
                                            threads_per_block);
         const dim3 offset(ioffset, joffset, koffset);
         const dim3 global_grid_size(width, height, depth);
@@ -123,8 +125,8 @@ int main(int argc, char** argv) {
         std::cout << et.elapsed() << std::endl;
     } else if(axis == 'y') {
        //launch on core space only    
-        const dim3 blocks = compute_blocks(dim3(width - ioffset,
-                                                depth - koffset),
+        const dim3 blocks = compute_blocks(dim3(width - 2 * ioffset,
+                                                depth - 2 * koffset),
                                            threads_per_block);
         const dim3 offset(ioffset, joffset, koffset);
         const dim3 global_grid_size(width, height, depth);
@@ -144,8 +146,8 @@ int main(int argc, char** argv) {
         std::cout << et.elapsed() << std::endl;
     } else if(axis == 'z') {
        //launch on core space only    
-        const dim3 blocks = compute_blocks(dim3(width - ioffset,
-                                                height - joffset),
+        const dim3 blocks = compute_blocks(dim3(width - 2 * ioffset,
+                                                height - 2 * joffset),
                                            threads_per_block);
         const dim3 offset(ioffset, joffset, koffset);
         const dim3 global_grid_size(width, height, depth);
@@ -164,12 +166,11 @@ int main(int argc, char** argv) {
         et.stop();
         std::cout << et.elapsed() << std::endl;
     }
+    
     cudaMemcpy(&h_data[0], d_data_out, byte_size, cudaMemcpyDeviceToHost);
-
+    
     cudaFree(d_data_out);
     cudaFree(d_data_in);
-
-    cudaDeviceReset();
     return 0;
 
 }
