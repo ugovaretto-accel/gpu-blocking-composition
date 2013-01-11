@@ -34,8 +34,8 @@ struct laplacian_3d {
 int main(int argc, char** argv) {
 
     if(argc != 7) {
-        std::cout << "usage " << argv[0]
-                  << "width height depth <threads per block x y z>" << std::endl;
+        std::cout << "usage: " << argv[0]
+                  << " width height depth <threads per block x y z>" << std::endl;
         return 1;
     }
 
@@ -69,6 +69,8 @@ int main(int argc, char** argv) {
     const dim3 offset(ioffset, joffset, koffset);
     const dim3 global_grid_size(width, height, depth);
 
+    CUDAEventTimer et;
+    et.start();
     do_all_2_gpu<<<blocks, threads_per_block>>>(d_data_in,
                                                 d_data_out,
                                                 offset,
@@ -78,7 +80,8 @@ int main(int argc, char** argv) {
 #else           
                                                 laplacian_3d());
 #endif    
-
+    et.stop();
+    std::cout << et.elapsed() << std::endl;
     cudaMemcpy(&h_data[0], d_data_out, byte_size, cudaMemcpyDeviceToHost);
 
     cudaFree(d_data_out);
