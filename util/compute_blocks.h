@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cuda_runtime_api.h>
+#include <cuda_runtime.h>
 
 
 inline int compute_blocks(int length, int threads_per_block) {
