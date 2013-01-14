@@ -14,8 +14,8 @@ int main(int argc, char** argv) {
     cudaDeviceReset();
     if(argc < 8) {
         std::cout << "usage: " << argv[0]
-                  << " width height depth <threads per block x y z> nsteps [iteration axis]"
-                  << std::endl;
+                  << " width height depth <threads per block x y z> nsteps "
+                     "[iteration axis]" << std::endl;
         return 1;
     }
     char axis = 0;
@@ -57,8 +57,7 @@ int main(int argc, char** argv) {
     const dim3 threads_per_block = 
         dim3(threads_per_block_x, threads_per_block_y, threads_per_block_z);
 
-    CUDAEventTimer et;
-
+   
     const dim3 offset(ioffset, joffset, koffset);
     const dim3 global_grid_size(width, height, depth);
     

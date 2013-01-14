@@ -47,7 +47,8 @@ __global__ void tile_apply(REAL_T* in, REAL_T* out, int stencil_offset) {
     //stencil_offset = stencil width / 2
     const int ioff = blockIdx.x * blockDim.x;
     const int joff = blockIdx.y * blockDim.y;
-    const dim3 core_grid_dim(gridDim.x - stencil_offset, gridDim.y - stencil_offset);   
+    const dim3 core_grid_dim(gridDim.x - stencil_offset, 
+                             gridDim.y - stencil_offset);   
     const dim3 core_block_dim(blockDim.x - stencil_offset,
                               blockDim.y - stencil_offset);
     //periodic boundary condition
@@ -59,8 +60,10 @@ __global__ void tile_apply(REAL_T* in, REAL_T* out, int stencil_offset) {
     else if( in_j >= core_grid_dim.y ) in_j = in_j - core_grid_dim.y;
     const int global_in_idx = in_i + in_j * gridDim.x * blockDim.x;
     const int cache_idx = threadIdx.x + blockDim.x * threadIdx.y;
-    const int global_out_idx = threadIdx.x - stencil_offset + blockIdx.x * core_block_dim.x
-                               + (threadIdx.y - stencil_offset + blockIdx.y * core_block_dim.y)
+    const int global_out_idx = threadIdx.x - stencil_offset 
+                               + blockIdx.x * core_block_dim.x
+                               + (threadIdx.y - stencil_offset 
+                                  + blockIdx.y * core_block_dim.y)
                                * blockDim.x;
                                
     //copy data into shared memory
@@ -90,7 +93,8 @@ int main(int, char**) {
 
     cudaMemcpy(d_data, h_data, cudaMemcpyHostToDevice);
     const int stencil_offset = 1;
-    tile_apply<<<blocks, threads_per_block>>>(d_data_in, d_data_out, stencil_offset);
+    tile_apply<<<blocks, threads_per_block>>>(d_data_in, 
+                                              d_data_out, stencil_offset);
 
     cudaMemcpy(h_data, d_data_out, byte_size, cudaMemcpyDeviceToHost);
 

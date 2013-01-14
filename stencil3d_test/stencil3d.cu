@@ -12,19 +12,25 @@ __host__ __device__
 REAL_T laplacian_3d(const REAL_T* grid, int idx, dim3 grid_size) {
 
     return REAL_T(-6) * grid[idx]
-           + gv(grid, idx, 1, 0, 0, grid_size) - gv(grid, idx, -1, 0, 0, grid_size)
-           + gv(grid, idx, 0, 1, 0, grid_size) - gv(grid, idx, 0, -1, 0, grid_size)
-           + gv(grid, idx, 0, 0, 1, grid_size) - gv(grid, idx, 0, 0, -1, grid_size);
+           + gv(grid, idx, 1, 0, 0, grid_size) 
+           - gv(grid, idx, -1, 0, 0, grid_size)
+           + gv(grid, idx, 0, 1, 0, grid_size)
+           - gv(grid, idx, 0, -1, 0, grid_size)
+           + gv(grid, idx, 0, 0, 1, grid_size)
+           - gv(grid, idx, 0, 0, -1, grid_size);
 
 }
 #else
 struct laplacian_3d {
     __host__ __device__ 
-    REAL_T operator()(const REAL_T* grid, int idx, dim3 grid_size) const{
+    REAL_T operator()(const REAL_T* grid, int idx, dim3 grid_size) const {
         return REAL_T(-6) * grid[idx]
-             + gv(grid, idx, 1, 0, 0, grid_size) - gv(grid, idx, -1, 0, 0, grid_size)
-             + gv(grid, idx, 0, 1, 0, grid_size) - gv(grid, idx, 0, -1, 0, grid_size)
-             + gv(grid, idx, 0, 0, 1, grid_size) - gv(grid, idx, 0, 0, -1, grid_size);
+             + gv(grid, idx, 1, 0, 0, grid_size)
+             - gv(grid, idx, -1, 0, 0, grid_size)
+             + gv(grid, idx, 0, 1, 0, grid_size)
+             - gv(grid, idx, 0, -1, 0, grid_size)
+             + gv(grid, idx, 0, 0, 1, grid_size)
+             - gv(grid, idx, 0, 0, -1, grid_size);
 
     }
 };
@@ -35,8 +41,8 @@ int main(int argc, char** argv) {
     cudaDeviceReset();
     if(argc < 7) {
         std::cout << "usage: " << argv[0]
-                  << " width height depth <threads per block x y z> [iteration axis]"
-                  << std::endl;
+                  << " width height depth <threads per block x y z> "
+                     "[iteration axis]"  << std::endl;
         return 1;
     }
     char axis = 0;
@@ -174,6 +180,4 @@ int main(int argc, char** argv) {
     return 0;
 
 }
-
-
 

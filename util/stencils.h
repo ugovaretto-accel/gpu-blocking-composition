@@ -7,9 +7,12 @@ __host__ __device__
 REAL_T laplacian_3d(const REAL_T* grid, int idx, const dim3 grid_size) {
 
     return REAL_T(-6) * grid[idx]
-           + gv(grid, idx, 1, 0, 0, grid_size) - gv(grid, idx, -1, 0, 0, grid_size)
-           + gv(grid, idx, 0, 1, 0, grid_size) - gv(grid, idx, 0, -1, 0, grid_size)
-           + gv(grid, idx, 0, 0, 1, grid_size) - gv(grid, idx, 0, 0, -1, grid_size);
+           + gv(grid, idx, 1, 0, 0, grid_size) 
+           - gv(grid, idx, -1, 0, 0, grid_size)
+           + gv(grid, idx, 0, 1, 0, grid_size)
+           - gv(grid, idx, 0, -1, 0, grid_size)
+           + gv(grid, idx, 0, 0, 1, grid_size)
+           - gv(grid, idx, 0, 0, -1, grid_size);
 
 }
 
@@ -23,9 +26,12 @@ struct laplacian_3d {
     __host__ __device__ 
     REAL_T operator()(const REAL_T* grid, int idx, dim3 grid_size) const {
         return REAL_T(-6) * grid[idx]
-             + gv(grid, idx, 1, 0, 0, grid_size) - gv(grid, idx, -1, 0, 0, grid_size)
-             + gv(grid, idx, 0, 1, 0, grid_size) - gv(grid, idx, 0, -1, 0, grid_size)
-             + gv(grid, idx, 0, 0, 1, grid_size) - gv(grid, idx, 0, 0, -1, grid_size);
+             + gv(grid, idx, 1, 0, 0, grid_size)
+             - gv(grid, idx, -1, 0, 0, grid_size)
+             + gv(grid, idx, 0, 1, 0, grid_size)
+             - gv(grid, idx, 0, -1, 0, grid_size)
+             + gv(grid, idx, 0, 0, 1, grid_size)
+             - gv(grid, idx, 0, 0, -1, grid_size);
 
     }
 };
