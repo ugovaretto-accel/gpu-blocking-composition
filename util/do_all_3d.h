@@ -50,9 +50,9 @@ __global__ void do_all_3d_2_gpu(const T* in,
 /*core space + 2 * offset*/     dim3 out_global_grid_size,
 	                            FunT f,
                                 MapIdxFunT map ) {
-    int x = blockDim.x * blockIdx.x + threadIdx.x + offset.x;
-    int y = blockDim.y * blockIdx.y + threadIdx.y + offset.y;
-    int z = blockDim.z * blockIdx.z + threadIdx.z + offset.z;
+    int x = blockDim.x * blockIdx.x + threadIdx.x + in_offset.x;
+    int y = blockDim.y * blockIdx.y + threadIdx.y + in_offset.y;
+    int z = blockDim.z * blockIdx.z + threadIdx.z + in_offset.z;
     const int in_idx = x + in_global_grid_size.x 
                            * (y  + z * in_global_grid_size.y);
     dim3 out_coords = map(x, y, z, in_offset, in_global_grid_size, 
@@ -61,7 +61,7 @@ __global__ void do_all_3d_2_gpu(const T* in,
                         + out_global_grid_size.x
                         * (out_coords.y  + out_coords.z 
                                            * out_global_grid_size.y);  
-    out[out_idx] = f(in, idx, in_global_grid_size);
+    out[out_idx] = f(in, in_idx, in_global_grid_size);
 }
 
 

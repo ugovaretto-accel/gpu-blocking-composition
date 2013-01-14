@@ -4,11 +4,10 @@
 #include "../util/compute_blocks.h"
 #include "../util/do_all_3d.h"
 #include "../util/stencil.h"
-#include "../util/stencils.h"
 #include "../util/compute.h"
 
 typedef double REAL_T;
-   
+#include "../util/stencils.h"   
 
 int main(int argc, char** argv) {
     cudaDeviceReset();
@@ -82,17 +81,18 @@ int main(int argc, char** argv) {
                                threads_per_block);
     } else if(axis == 'z') {
        //launch on core space only    
-       const dim3 blocks = compute_blocks(dim3(width - 2 * ioffset,
-                                               height - 2 * joffset),
-                                          threads_per_block);
+       dim3 blocks = compute_blocks(dim3(width - 2 * ioffset,
+                                         height - 2 * joffset),
+                                    threads_per_block);
     }
-    do_all_3d_1_gpu(d_data_in, offset, global_grid_size, init(REAL_T(0));
+    do_all_3d_1_gpu<<<blocks, threads_per_block>>>
+        (d_data_in, offset, global_grid_size, init(REAL_T(0)));
     CUDAEventTimer timer;
     timer.start();
     //compute
-    compute<do_all_3d_2_gpu<REAL_T, REAL_T, diffusion_3d>
+    compute
            (nsteps, d_data_in, d_data_out, offset,
-            global_grid_size, diffusion_3d());
+            global_grid_size, blocks, threads_per_block, diffusion_3d());
     timer.stop();
     std::cout << timer.elapsed() << std::endl;
     //copy data back
@@ -101,7 +101,6 @@ int main(int argc, char** argv) {
     cudaFree(d_data_out);
     cudaFree(d_data_in);
     return 0;
-
 }
 
 
