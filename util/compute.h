@@ -33,8 +33,6 @@ void cpu_compute(int nsteps,
                  T* d_data_out,
                  dim3 offset,
                  dim3 global_grid_size,
-                 dim3 blocks,
-                 dim3 threads_per_block, 
                  FunT operation,
                  KernelT kernel) {
 
