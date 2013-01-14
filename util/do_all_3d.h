@@ -1,6 +1,21 @@
 #pragma once
 #include <cuda_runtime.h>
 
+
+//launch with size of core space
+template < typename T, typename FunT >
+__global__ void do_all_3d_1_gpu(T* grid,
+	                              dim3 offset,
+	                              dim3 global_grid_size, //core space + 2 * offset
+	                              FunT f ) {
+    const int x = blockDim.x * blockIdx.x + threadIdx.x + offset.x;
+    const int y = blockDim.y * blockIdx.y + threadIdx.y + offset.y;
+    const int z = blockDim.z * blockIdx.z + threadIdx.z + offset.z;
+    const int idx = x + global_grid_size.x * (y  + z * global_grid_size.y);
+    grid[idx] = f(grid, idx, global_grid_size);
+}
+
+
 //launch with size of core space
 template < typename T, typename FunT >
 __global__ void do_all_3d_2_gpu(const T* in,
@@ -14,6 +29,38 @@ __global__ void do_all_3d_2_gpu(const T* in,
     const int idx = x + global_grid_size.x * (y  + z * global_grid_size.y);
     out[idx] = f(in, idx, global_grid_size);
 }
+
+
+//launch with size of core space
+
+//Perform operation and computation of output location through
+//index mapping.
+//
+//sample index mapping function to perform scaled copies
+//out_coord = out_offset 
+//            + in_coord 
+//            * (out_global_grid_size - 2*outoffset)
+//               / (out_global_grid_size - 2*inoffset)
+template < typename T, typename FunT, typename MapIdxFunT >
+__global__ void do_all_3d_2_gpu(const T* in,
+	                              dim3 in_offset,
+	                              dim3 in_global_grid_size, //core space + 2 * offset
+                                const T* out,
+	                              dim3 out_offset,
+	                              dim3 out_global_grid_size, //core space + 2 * offset
+	                              FunT f,
+                                MapIdxFunT map ) {
+    int x = blockDim.x * blockIdx.x + threadIdx.x + offset.x;
+    int y = blockDim.y * blockIdx.y + threadIdx.y + offset.y;
+    int z = blockDim.z * blockIdx.z + threadIdx.z + offset.z;
+    const int in_idx = x + in_global_grid_size.x * (y  + z * in_global_grid_size.y);
+    dim3 out_coords = map(x, y, z, in_offset, in_global_grid_size, out_offset, out_global_grid_size);
+    const int out_idx = out_coords.x
+                        + out_global_grid_size.x
+                        * (out_coords.y  + out_coords.z * out_global_grid_size.y);  
+    out[out_idx] = f(in, idx, in_global_grid_size);
+}
+
 
 //launch with size of 2d core space, iterates on z internally
 template < typename T, typename FunT > 
