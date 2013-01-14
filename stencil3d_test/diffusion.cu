@@ -92,7 +92,8 @@ int main(int argc, char** argv) {
     //compute
     compute
            (nsteps, d_data_in, d_data_out, offset,
-            global_grid_size, blocks, threads_per_block, diffusion_3d());
+            global_grid_size, blocks, threads_per_block, diffusion_3d(),
+            do_all_3d_2_gpu<REAL_T, diffusion_3d> );
     timer.stop();
     std::cout << timer.elapsed() << std::endl;
     //copy data back

@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <cuda_runtime.h>
 
-template < typename T, typename FunT >
+template < typename T, typename FunT, typename KernelT >
 void compute(int nsteps,
              T* d_data_in,
              T* d_data_out,
@@ -10,10 +10,11 @@ void compute(int nsteps,
              dim3 global_grid_size,
              dim3 blocks,
              dim3 threads_per_block, 
-             FunT operation) {
+             FunT operation,
+             KernelT kernel) {
 
     for(int step = 0; step != nsteps; ++step) {  
-              do_all_3d_2_gpu<<<blocks, threads_per_block>>>
+              kernel<<<blocks, threads_per_block>>>
                      (d_data_in,
                               d_data_out,
                               offset,
