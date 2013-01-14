@@ -3,15 +3,15 @@
 #include <cuda_runtime.h>
 
 template < typename T, typename FunT, typename KernelT >
-void compute(int nsteps,
-             T* d_data_in,
-             T* d_data_out,
-             dim3 offset,
-             dim3 global_grid_size,
-             dim3 blocks,
-             dim3 threads_per_block, 
-             FunT operation,
-             KernelT kernel) {
+void cuda_compute(int nsteps,
+                  T* d_data_in,
+                  T* d_data_out,
+                  dim3 offset,
+                  dim3 global_grid_size,
+                  dim3 blocks,
+                  dim3 threads_per_block, 
+                  FunT operation,
+                  KernelT kernel) {
 
     for(int step = 0; step != nsteps; ++step) {  
               kernel<<<blocks, threads_per_block>>>
@@ -27,3 +27,25 @@ void compute(int nsteps,
     if(nsteps % 2 == 0 ) std::swap(d_data_in, d_data_out);
 }
 
+template < typename T, typename FunT, typename KernelT >
+void cpu_compute(int nsteps,
+                 T* d_data_in,
+                 T* d_data_out,
+                 dim3 offset,
+                 dim3 global_grid_size,
+                 dim3 blocks,
+                 dim3 threads_per_block, 
+                 FunT operation,
+                 KernelT kernel) {
+
+    for(int step = 0; step != nsteps; ++step) {  
+              kernel(d_data_in,
+                     d_data_out,
+                     offset,
+                     global_grid_size,                                          
+                     operation);
+        std::swap(d_data_in, d_data_out);
+    }
+
+    if(nsteps % 2 == 0 ) std::swap(d_data_in, d_data_out);
+}

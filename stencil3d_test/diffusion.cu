@@ -90,7 +90,7 @@ int main(int argc, char** argv) {
     CUDAEventTimer timer;
     timer.start();
     //compute
-    compute
+    cuda_compute
            (nsteps, d_data_in, d_data_out, offset,
             global_grid_size, blocks, threads_per_block, diffusion_3d(),
             do_all_3d_2_gpu<REAL_T, diffusion_3d> );
