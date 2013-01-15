@@ -106,7 +106,7 @@ int main(int argc, char** argv) {
     do_all_3d_1_cpu(&h_data_in[0], 
                     offset,
                     global_grid_size,
-                    init<REAL_T>(REAL_T(0)));    
+                    init<REAL_T>(REAL_T(0)));                     
     CUDAEventTimer gpu_timer;
     gpu_timer.start();
     //compute
@@ -130,7 +130,18 @@ int main(int argc, char** argv) {
     //compare results
     std::cout << "GPU = CPU: " << std::boolalpha
               << std::equal(h_data.begin(), h_data.end(),
-                            h_data_out.begin(), distance< REAL_T >(EPS));
+                            h_data_out.begin(), distance< REAL_T >(EPS))
+              << std::endl;
+
+    // do_all_3d_1_cpu(&h_data[0], 
+    //                 offset,
+    //                 global_grid_size,
+    //                 print<REAL_T>());      
+    // std::cout << "=========================================\n";    
+    // do_all_3d_1_cpu(&h_data_out[0], 
+    //                 offset,
+    //                 global_grid_size,
+    //                 print<REAL_T>());      
 
     //free resources
     cudaFree(d_data_out);

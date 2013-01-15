@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cuda_runtime.h>
+#include <cstdio>
 
 struct laplacian_3d {
     template < typename T > 
@@ -21,7 +22,6 @@ struct diffusion_3d {
     __host__ __device__
     T operator()(const T* grid, int idx, dim3 grid_size) const {
         return grid[idx] +  T(0.1) * l3d(grid, idx, grid_size); 
-
     }
     laplacian_3d l3d;
 };
@@ -34,4 +34,36 @@ struct init {
         return value; 
     }
     T value;
+};
+
+
+template < typename T >
+struct print;
+
+template <>
+struct print<float> {
+    __host__ __device__
+    float operator()(float* grid, int idx, dim3 grid_size) const {
+        printf("%f ", grid[idx]);
+        return grid[idx];
+    }
+};
+
+
+template <>
+struct print<double> {
+    __host__ __device__
+    double operator()(double* grid, int idx, dim3 grid_size) const {
+        printf("%f ", grid[idx]);
+        return grid[idx];
+    }
+};
+
+template <>
+struct print<int> {
+    __host__ __device__
+    int operator()(int* grid, int idx, dim3 grid_size) const {
+        printf("%d ", grid[idx]);
+        return grid[idx];
+    }
 };
