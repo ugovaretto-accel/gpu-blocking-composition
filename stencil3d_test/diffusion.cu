@@ -7,7 +7,20 @@
 #include "../util/compute.h"
 #include "../util/stencils.h"   
 
+template <typename T>
+struct distance {
+    distance(T eps = T()) : epsilon(eps) {}
+    bool operator()(const T& v1, const T& v2) const {
+        return std::abs(v1 - v2) <= eps;
+    }
+    T epsilon;
+};
+
+
 typedef double REAL_T;
+
+REAL_T EPS = 0.000001;
+
 
 int main(int argc, char** argv) {
     cudaDeviceReset();
@@ -45,6 +58,8 @@ int main(int argc, char** argv) {
     const size_t size = width * height * depth;
     const size_t byte_size = size * sizeof(REAL_T);
     std::vector< REAL_T > h_data(size, 1);
+    std::vector< REAL_T > h_data_in(size, 1);
+    std::vector< REAL_T > h_data_out(size);
 
     REAL_T* d_data_in = 0;
     REAL_T* d_data_out = 0;
@@ -87,7 +102,11 @@ int main(int argc, char** argv) {
     }
     do_all_3d_1_gpu<<<blocks, threads_per_block>>>
         (d_data_in, offset, global_grid_size, init<REAL_T>(REAL_T(0)));
-    CUDAEventTimer timer;
+    do_all_3d_1_cpu(&h_data_in[0], 
+                    offset,
+                    global_grid_size,
+                    init<REAL_T>(REAL_T(0)));    
+    CUDAEventTimer gpu_timer;
     timer.start();
     //compute
     cuda_compute
@@ -95,9 +114,23 @@ int main(int argc, char** argv) {
             global_grid_size, blocks, threads_per_block, diffusion_3d(),
             do_all_3d_2_gpu<REAL_T, diffusion_3d>);
     timer.stop();
-    std::cout << timer.elapsed() << std::endl;
+    std::cout << "GPU: " << timer.elapsed() << std::endl;
+    Timer cpu_timer;
+    cpu_timer.Start();
+    cpu_compute
+           (nsteps, &h_data_in[0], &h_data_out[0], offset,
+            global_grid_size, diffusion_3d(),
+            do_all_3d_2_cpu<REAL_T, diffusion_3d>);
+    const double ms = cpu_timer.Stop();
+    std::cout << "CPU: " << ms << std::endl;
     //copy data back
     cudaMemcpy(&h_data[0], d_data_out, byte_size, cudaMemcpyDeviceToHost);
+
+    //compare results
+    std::cout << "GPU = CPU: " 
+              << std::equal(h_data.begin(), h_data.end(),
+                            h_data_out.begin(), distance(EPS));
+
     //free resources
     cudaFree(d_data_out);
     cudaFree(d_data_in);

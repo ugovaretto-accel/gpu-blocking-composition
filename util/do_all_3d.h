@@ -1,6 +1,61 @@
 #pragma once
 #include <cuda_runtime.h>
 
+template < typename T, typename FunT >
+void do_all_3d_1_cpu(T* grid,
+                     dim3 offset,
+                     dim3 global_grid_size, //core space + 2 * offset
+                     FunT f ) {
+    const int core_space_width = global_grid_size.x - 2 * offset.x;
+    const int core_space_height = global_grid_size.y - 2 * offset.y;
+    const int core_space_depth = global_grid_size.z - 2 * offset.z;
+    int z = 0;
+    int y = 0;
+    int x = 0;
+    int idx = 0;
+    const int slice_stride = global_grid_size.x * global_grid_size.y;
+    const int row_stride = global_grid_size.x;
+    for(int k = 0; k != core_space_width; ++k ) {
+        z = slice_stride * (offset.z + k); 
+        for(int j = 0; j != core_space_height; ++j) {
+            y = row_stride * (offset.y + j);
+            for(int i = 0; i != core_space_width; ++i) {
+                idx = offset.x + i + y + z;
+                grid[idx] = f(grid, idx, global_grid_size);
+            }
+        }
+    }   
+}
+
+
+template < typename T, typename FunT >
+void do_all_3d_2_cpu(const T* in,
+                     T* out,
+                     dim3 offset,
+                     dim3 global_grid_size, //core space + 2 * offset
+                     FunT f ) {
+    const int core_space_width = global_grid_size.x - 2 * offset.x;
+    const int core_space_height = global_grid_size.y - 2 * offset.y;
+    const int core_space_depth = global_grid_size.z - 2 * offset.z;
+    int z = 0;
+    int y = 0;
+    int x = 0;
+    int idx = 0;
+    const int slice_stride = global_grid_size.x * global_grid_size.y;
+    const int row_stride = global_grid_size.x;
+    for(int k = 0; k != core_space_width; ++k ) {
+        z = slice_stride * (offset.z + k); 
+        for(int j = 0; j != core_space_height; ++j) {
+            y = row_stride * (offset.y + j);
+            for(int i = 0; i != core_space_width; ++i) {
+                idx = offset.x + i + y + z;
+                out[idx] = f(in, idx, global_grid_size);
+            }
+        }
+    }   
+}
+
+
 
 //launch with size of core space
 template < typename T, typename FunT >
