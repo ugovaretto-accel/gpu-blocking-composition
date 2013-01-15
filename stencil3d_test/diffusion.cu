@@ -5,9 +5,9 @@
 #include "../util/do_all_3d.h"
 #include "../util/stencil.h"
 #include "../util/compute.h"
+#include "../util/stencils.h"   
 
 typedef double REAL_T;
-#include "../util/stencils.h"   
 
 int main(int argc, char** argv) {
     cudaDeviceReset();
@@ -86,14 +86,14 @@ int main(int argc, char** argv) {
                                     threads_per_block);
     }
     do_all_3d_1_gpu<<<blocks, threads_per_block>>>
-        (d_data_in, offset, global_grid_size, init(REAL_T(0)));
+        (d_data_in, offset, global_grid_size, init<REAL_T>(REAL_T(0)));
     CUDAEventTimer timer;
     timer.start();
     //compute
     cuda_compute
            (nsteps, d_data_in, d_data_out, offset,
             global_grid_size, blocks, threads_per_block, diffusion_3d(),
-            do_all_3d_2_gpu<REAL_T, diffusion_3d> );
+            do_all_3d_2_gpu<REAL_T, diffusion_3d>);
     timer.stop();
     std::cout << timer.elapsed() << std::endl;
     //copy data back
