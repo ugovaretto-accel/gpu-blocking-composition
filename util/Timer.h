@@ -150,7 +150,3 @@ inline void Timer::Reset()
 
 }
 #endif
-
-
-
-#endif //TIMER_H_

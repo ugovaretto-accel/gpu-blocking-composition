@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include "../util/CUDAEventTimer.h"
+#include "../util/Timer.h"
 #include "../util/compute_blocks.h"
 #include "../util/do_all_3d.h"
 #include "../util/stencil.h"
@@ -11,7 +12,7 @@ template <typename T>
 struct distance {
     distance(T eps = T()) : epsilon(eps) {}
     bool operator()(const T& v1, const T& v2) const {
-        return std::abs(v1 - v2) <= eps;
+        return std::abs(v1 - v2) <= epsilon;
     }
     T epsilon;
 };
@@ -107,14 +108,14 @@ int main(int argc, char** argv) {
                     global_grid_size,
                     init<REAL_T>(REAL_T(0)));    
     CUDAEventTimer gpu_timer;
-    timer.start();
+    gpu_timer.start();
     //compute
     cuda_compute
            (nsteps, d_data_in, d_data_out, offset,
             global_grid_size, blocks, threads_per_block, diffusion_3d(),
             do_all_3d_2_gpu<REAL_T, diffusion_3d>);
-    timer.stop();
-    std::cout << "GPU: " << timer.elapsed() << std::endl;
+    gpu_timer.stop();
+    std::cout << "GPU: " << gpu_timer.elapsed() << std::endl;
     Timer cpu_timer;
     cpu_timer.Start();
     cpu_compute
@@ -127,9 +128,9 @@ int main(int argc, char** argv) {
     cudaMemcpy(&h_data[0], d_data_out, byte_size, cudaMemcpyDeviceToHost);
 
     //compare results
-    std::cout << "GPU = CPU: " 
+    std::cout << "GPU = CPU: " << std::boolalpha
               << std::equal(h_data.begin(), h_data.end(),
-                            h_data_out.begin(), distance(EPS));
+                            h_data_out.begin(), distance< REAL_T >(EPS));
 
     //free resources
     cudaFree(d_data_out);
