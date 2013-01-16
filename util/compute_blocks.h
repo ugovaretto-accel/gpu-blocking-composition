@@ -7,8 +7,8 @@ inline int compute_blocks(int length, int threads_per_block) {
     if(threads_per_block < 1) return 1;
     //integer division:
     //if length is evenly divisable by the number of threads
-    //is equivalent to length / threads_per_block, if not
-    //it is equivalent to length / threads_per_block  + 1
+    //it is equal to length / threads_per_block, if not
+    //it is equal to length / threads_per_block + 1
     return (length + threads_per_block - 1) / threads_per_block;
 }
 

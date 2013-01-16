@@ -5,7 +5,8 @@
 
 typedef float REAL_T;
 
-__device__ REAL_T read_global_value(REAL_T* center, int i, int j) {
+__host__ __device__
+REAL_T read_global_value(REAL_T* center, int i, int j) {
     if( i < 0 ) i += gridDim.x;
     else( i >= gridDim.x ) i -= gridDim.x;
     if( j < 0 ) j += gridDim.y;
@@ -13,12 +14,14 @@ __device__ REAL_T read_global_value(REAL_T* center, int i, int j) {
     return *(center + i + j * gridDim.x);
 }
 
-__device__ REAL_T read_value(REAL_T* center, int width, int i, int j) {
+__host__ __device__
+REAL_T read_value(REAL_T* center, int width, int i, int j) {
     return *(center + i + j * width);
 }
 
 
-__device__ REAL_T stencil_op(REAL_T* center, int width) {
+__host__ __device__
+REAL_T stencil_op(REAL_T* center, int width) {
     return   - 4 * read_value(center, 0, 0) 
              + read_value(center, width, 0, 1)
              - read_value(center, width, 0, -1)

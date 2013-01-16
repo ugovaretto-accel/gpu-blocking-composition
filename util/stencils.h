@@ -1,7 +1,10 @@
 #pragma once
 
 #include <cuda_runtime.h>
-#include <cstdio>
+#include <cstdio> //for printf in CUDA
+
+#include "stencil.h"
+
 
 struct laplacian_3d {
     template < typename T > 

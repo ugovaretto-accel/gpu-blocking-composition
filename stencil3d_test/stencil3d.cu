@@ -105,7 +105,6 @@ int main(int argc, char** argv) {
     #else           
                                                        laplacian_3d());
     #endif
-        cudaDeviceSynchronize();    
         et.stop();
         std::cout << et.elapsed() << std::endl;
     } else if(axis == 'x') {

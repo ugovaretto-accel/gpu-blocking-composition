@@ -2,6 +2,12 @@
 #include <algorithm>
 #include <cuda_runtime.h>
 
+//T: data type
+//FunT: stencil operator applied to every grid element
+//KernelT: cuda kernel or cpu 'apply' function - applies
+//         the FunT functor to every element in the grid
+
+
 template < typename T, typename FunT, typename KernelT >
 void cuda_compute(int nsteps,
                   T* d_data_in,
@@ -16,14 +22,13 @@ void cuda_compute(int nsteps,
     for(int step = 0; step != nsteps; ++step) {  
               kernel<<<blocks, threads_per_block>>>
                      (d_data_in,
-                              d_data_out,
-                              offset,
-                              global_grid_size,                                          
-                              operation);
-        cudaDeviceSynchronize();
+                      d_data_out,
+                      offset,
+                      global_grid_size,                                          
+                      operation);
         std::swap(d_data_in, d_data_out);
     }
-
+    cudaDeviceSynchronize(); //wait for kernel execution to finish
     if(nsteps % 2 == 0 ) std::swap(d_data_in, d_data_out);
 }
 
