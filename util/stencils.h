@@ -12,11 +12,11 @@ struct laplacian_3d {
     T operator()(const T* grid, int idx, dim3 grid_size) const {
         return T(-6) * grid[idx]
              + gv(grid, idx, 1, 0, 0, grid_size)
-             - gv(grid, idx, -1, 0, 0, grid_size)
+             + gv(grid, idx, -1, 0, 0, grid_size)
              + gv(grid, idx, 0, 1, 0, grid_size)
-             - gv(grid, idx, 0, -1, 0, grid_size)
+             + gv(grid, idx, 0, -1, 0, grid_size)
              + gv(grid, idx, 0, 0, 1, grid_size)
-             - gv(grid, idx, 0, 0, -1, grid_size);
+             + gv(grid, idx, 0, 0, -1, grid_size);
 
     }
 };

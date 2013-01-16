@@ -58,7 +58,7 @@ int main(int argc, char** argv) {
     const size_t byte_size = size * sizeof(REAL_T);
     std::vector< REAL_T > h_data(size, 1);
     std::vector< REAL_T > h_data_in(size, 1);
-    std::vector< REAL_T > h_data_out(size);
+    std::vector< REAL_T > h_data_out(size, 1);
 
     REAL_T* d_data_in = 0;
     REAL_T* d_data_out = 0;
@@ -68,6 +68,7 @@ int main(int argc, char** argv) {
     //copy 1-initialized memory to GPU,this will fill the global grid
     //i.e. core region(where computation happens) and halo region
     cudaMemcpy(d_data_in, &h_data[0], byte_size, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_data_out, &h_data[0], byte_size, cudaMemcpyHostToDevice);
     
   
     const dim3 threads_per_block = 
@@ -141,19 +142,20 @@ int main(int argc, char** argv) {
               << std::equal(h_data.begin(), h_data.end(),
                             h_data_out.begin(), distance< REAL_T >(EPS))
               << std::endl;
-
-    // print something out
-    //            
-    // do_all_3d_1_cpu(&h_data[0], 
-    //                 offset,
-    //                 global_grid_size,
-    //                 print<REAL_T>(100));      
-    // std::cout << "=========================================\n";    
-    // do_all_3d_1_cpu(&h_data_out[0], 
-    //                 offset,
-    //                 global_grid_size,
-    //                 print<REAL_T>(100));      
-
+#if 0
+    //print something out
+               
+    do_all_3d_1_cpu(&h_data[0], 
+                    offset,
+                    global_grid_size,
+                    print<REAL_T>());      
+    std::cout << "\n=========================================\n";    
+    do_all_3d_1_cpu(&h_data_out[0], 
+                    offset,
+                    global_grid_size,
+                    print<REAL_T>());      
+    std::cout << std::endl;
+#endif     
     //free resources
     cudaFree(d_data_out);
     cudaFree(d_data_in);
