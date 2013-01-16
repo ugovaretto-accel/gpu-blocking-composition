@@ -129,7 +129,7 @@ __global__ void do_all_3d_2_z_gpu(const T* in,
     const int y = blockDim.y * blockIdx.y + threadIdx.y + offset.y;
     const int slice_stride = global_grid_size.x * global_grid_size.y;
     int idx = x + global_grid_size.x * y; 
-    for(int k = 0; k != global_grid_size.z - 2 * offset.z; ++k) {
+    for(int k = offset.z; k != global_grid_size.z - 2 * offset.z; ++k) {
     	idx +=  k * slice_stride;	
         out[idx] = f(in, idx, global_grid_size);
     }

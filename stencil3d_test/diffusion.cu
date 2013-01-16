@@ -19,7 +19,7 @@ struct distance {
 
 typedef double REAL_T;
 
-REAL_T EPS = 0.000001;
+REAL_T EPS = REAL_T(0.000001);
 
 int main(int argc, char** argv) {
     cudaDeviceReset();
@@ -64,12 +64,7 @@ int main(int argc, char** argv) {
     REAL_T* d_data_out = 0;
     cudaMalloc(&d_data_in, byte_size);
     cudaMalloc(&d_data_out, byte_size);
-
-    //copy 1-initialized memory to GPU,this will fill the global grid
-    //i.e. core region(where computation happens) and halo region
-    cudaMemcpy(d_data_in, &h_data[0], byte_size, cudaMemcpyHostToDevice);
-    cudaMemcpy(d_data_out, &h_data[0], byte_size, cudaMemcpyHostToDevice);
-    
+   
   
     const dim3 threads_per_block = 
         dim3(threads_per_block_x, threads_per_block_y, threads_per_block_z);
@@ -89,37 +84,64 @@ int main(int argc, char** argv) {
     } else if(axis == 'x') {
        //launch on core space only    
        blocks = compute_blocks(dim3(height - 2 * joffset,
-                                    depth - 2 * koffset),
+                                    depth - 2 * koffset,
+                                    1 ),
                                threads_per_block);
     } else if(axis == 'y') {
        //launch on core space only    
        blocks = compute_blocks(dim3(width - 2 * ioffset,
-                                    depth - 2 * koffset),
+                                    depth - 2 * koffset,
+                                    1),
                                threads_per_block);
     } else if(axis == 'z') {
        //launch on core space only    
-       dim3 blocks = compute_blocks(dim3(width - 2 * ioffset,
-                                         height - 2 * joffset),
+       blocks = compute_blocks(dim3(width - 2 * ioffset,
+                                    height - 2 * joffset,
+                                    1),
                                     threads_per_block);
     }
     //from here on all computation is done on the core region only
     //i.e. global grid - halo region
 
     //fill inner(core) region with zeros
-    do_all_3d_1_gpu<<<blocks, threads_per_block>>>
-        (d_data_in, offset, global_grid_size, init<REAL_T>(REAL_T(0)));
+    //note that it is required to re-compute the number of
+    //threads per block because the actual threads per block
+    //used varies if 2d+in-kernel-iteration is selected
+    //just copy from host memory for now 
+    //do_all_3d_1_gpu<<<blocks, threads_per_block>>>
+    //    (d_data_in, offset, global_grid_size, init<REAL_T>(REAL_T(0)));
+
     do_all_3d_1_cpu(&h_data_in[0], 
                     offset,
                     global_grid_size,
                     init<REAL_T>(REAL_T(0)));
+    cudaMemcpy(d_data_in, &h_data_in[0], byte_size, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_data_out, &h_data_in[0], byte_size, cudaMemcpyHostToDevice);
+
     //GPU                     
     CUDAEventTimer gpu_timer;
     gpu_timer.start();
     //compute
-    cuda_compute
-           (nsteps, d_data_in, d_data_out, offset,
-            global_grid_size, blocks, threads_per_block, diffusion_3d(),
-            do_all_3d_2_gpu<REAL_T, diffusion_3d>);
+    if(axis == 0)
+        cuda_compute
+               (nsteps, d_data_in, d_data_out, offset,
+                global_grid_size, blocks, threads_per_block, diffusion_3d(),
+                do_all_3d_2_gpu<REAL_T, diffusion_3d>);
+    else if(axis == 'x')
+        cuda_compute
+               (nsteps, d_data_in, d_data_out, offset,
+                global_grid_size, blocks, threads_per_block, diffusion_3d(),
+                do_all_3d_2_x_gpu<REAL_T, diffusion_3d>);
+    else if(axis == 'y')
+        cuda_compute
+               (nsteps, d_data_in, d_data_out, offset,
+                global_grid_size, blocks, threads_per_block, diffusion_3d(),
+                do_all_3d_2_y_gpu<REAL_T, diffusion_3d>);
+    else if(axis == 'z')
+        cuda_compute
+               (nsteps, d_data_in, d_data_out, offset,
+                global_grid_size, blocks, threads_per_block, diffusion_3d(),
+                do_all_3d_2_z_gpu<REAL_T, diffusion_3d>);                                                     
     gpu_timer.stop();
     std::cout << "GPU: " << gpu_timer.elapsed() << std::endl;
     
@@ -142,7 +164,7 @@ int main(int argc, char** argv) {
               << std::equal(h_data.begin(), h_data.end(),
                             h_data_out.begin(), distance< REAL_T >(EPS))
               << std::endl;
-#if 0
+#if 1
     //print something out
                
     do_all_3d_1_cpu(&h_data[0], 
