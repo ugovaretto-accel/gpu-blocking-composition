@@ -16,6 +16,12 @@ struct distance {
     T epsilon;
 };
 
+std::ostream& operator<<(std::ostream& os, const dim3 d) {
+    os << d.x << ' ' << d.y << ' ' << d.z;
+    return os;
+}
+
+
 
 typedef double REAL_T;
 
@@ -52,10 +58,24 @@ int main(int argc, char** argv) {
     const int threads_per_block_x = atoi(argv[4]);
     const int threads_per_block_y = atoi(argv[5]);
     //set threads per block in z direction to zero if axis is set
-    const int threads_per_block_z = axis == 0 ? atoi(argv[6]) : 0;
+    const int threads_per_block_z = axis == 0 ? atoi(argv[6]) : 1;
     const int nsteps = atoi(argv[7]);
     const size_t size = width * height * depth;
     const size_t byte_size = size * sizeof(REAL_T);
+    
+
+    cudaDeviceProp prop;
+    cudaGetDeviceProperties(&prop, 0);
+    const int total_threads = threads_per_block_x 
+                              * threads_per_block_y 
+                              * threads_per_block_z;                    
+    if(prop.maxThreadsPerBlock < total_threads) {
+        std::cout << "ERROR: max threads per block count("
+                  << prop.maxThreadsPerBlock << ") exceeded("
+                  << total_threads << ")" << std::endl;
+        return -1;
+    }
+
     std::vector< REAL_T > h_data(size, 1);
     std::vector< REAL_T > h_data_in(size, 1);
     std::vector< REAL_T > h_data_out(size, 1);
@@ -141,8 +161,17 @@ int main(int argc, char** argv) {
         cuda_compute
                (nsteps, d_data_in, d_data_out, offset,
                 global_grid_size, blocks, threads_per_block, diffusion_3d(),
-                do_all_3d_2_z_gpu<REAL_T, diffusion_3d>);                                                     
+                do_all_3d_2_z_gpu<REAL_T, diffusion_3d>);                                                                
     gpu_timer.stop();
+    cudaError_t error = cudaGetLastError();
+    if(error != cudaSuccess) {
+        std::cerr << "ERROR: " << cudaGetErrorString(error) << std::endl;
+        std::cerr << "Launch config: " 
+                  << " blocks: " << blocks << std::endl
+                  << " threads per block: " << threads_per_block << std::endl
+                  << " grid: " << global_grid_size << std::endl; 
+        return -1;
+    }       
     std::cout << "GPU: " << gpu_timer.elapsed() << std::endl;
     
     //CPU
@@ -164,7 +193,7 @@ int main(int argc, char** argv) {
               << std::equal(h_data.begin(), h_data.end(),
                             h_data_out.begin(), distance< REAL_T >(EPS))
               << std::endl;
-#if 1
+#if 0
     //print something out
                
     do_all_3d_1_cpu(&h_data[0], 

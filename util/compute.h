@@ -28,7 +28,6 @@ void cuda_compute(int nsteps,
                       operation);
         std::swap(d_data_in, d_data_out);
     }
-    cudaDeviceSynchronize(); //wait for kernel execution to finish
     if(nsteps % 2 == 0 ) std::swap(d_data_in, d_data_out);
 }
 
