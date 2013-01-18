@@ -20,7 +20,11 @@ void do_all_3d_1_cpu(T* grid,
             y = row_stride * (offset.y + j);
             for(int i = 0; i != core_space_width; ++i) {
                 idx = offset.x + i + y + z;
-                grid[idx] = f(grid, dim3(i, j, k), global_grid_size);
+                grid[idx] = f(grid, 
+                              dim3(i + offset.x,
+                                   j + offset.y,
+                                   k + offset.z),
+                              global_grid_size);
             }
         }
     }   
@@ -47,7 +51,11 @@ void do_all_3d_2_cpu(const T* in,
             y = row_stride * (offset.y + j);
             for(int i = 0; i != core_space_width; ++i) {
                 idx = offset.x + i + y + z;
-                out[idx] = f(in, dim3(i, j, k), global_grid_size);
+                out[idx] = f(in, 
+                             dim3(i + offset.x,
+                                   j + offset.y,
+                                   k + offset.z),
+                              global_grid_size);
             }
         }
     }   

@@ -5,7 +5,8 @@
 #include "../util/compute_blocks.h"
 #include "../util/do_all_3d.h"
 #include "../util/compute.h"
-#include "../util/stencils.h"   
+#include "../util/stencils.h"
+#include "../util/cuda_error.h"   
 
 template <typename T>
 struct distance {
@@ -82,8 +83,8 @@ int main(int argc, char** argv) {
 
     REAL_T* d_data_in = 0;
     REAL_T* d_data_out = 0;
-    cudaMalloc(&d_data_in, byte_size);
-    cudaMalloc(&d_data_out, byte_size);
+    CHECK_CUDA(cudaMalloc(&d_data_in, byte_size));
+    CHECK_CUDA(cudaMalloc(&d_data_out, byte_size));
    
   
     const dim3 threads_per_block = 
@@ -135,8 +136,13 @@ int main(int argc, char** argv) {
                     offset,
                     global_grid_size,
                     init<REAL_T>(REAL_T(0)));
-    cudaMemcpy(d_data_in, &h_data_in[0], byte_size, cudaMemcpyHostToDevice);
-    cudaMemcpy(d_data_out, &h_data_in[0], byte_size, cudaMemcpyHostToDevice);
+    CHECK_CUDA(cudaMemcpy(d_data_in, 
+                          &h_data_in[0],
+                          byte_size, cudaMemcpyHostToDevice));
+    CHECK_CUDA(cudaMemcpy(d_data_out,
+                          &h_data_in[0],
+                          byte_size,
+                          cudaMemcpyHostToDevice));
 
     //GPU                     
     CUDAEventTimer gpu_timer;
