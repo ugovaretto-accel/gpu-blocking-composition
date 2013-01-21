@@ -23,8 +23,10 @@ std::ostream& operator<<(std::ostream& os, const dim3 d) {
 }
 
 
-
 typedef double REAL_T;
+
+surface<void, 3> in_surface;
+surface<void, 3> out_surface;
 
 REAL_T EPS = REAL_T(0.000001);
 
@@ -62,7 +64,6 @@ int main(int argc, char** argv) {
     const int threads_per_block_z = axis == 0 ? atoi(argv[6]) : 1;
     const int nsteps = atoi(argv[7]);
     const size_t size = width * height * depth;
-    const size_t byte_size = size * sizeof(REAL_T);
     const size_t row_byte_size = width * sizeof(REAL_T);
     
 
@@ -82,18 +83,23 @@ int main(int argc, char** argv) {
     std::vector< REAL_T > h_data_in(size, 1);
     std::vector< REAL_T > h_data_out(size, 1);
 
-    cudaPitchedPtr d_data_in;
-    cudaPitchedPtr d_data_out;
-    CHECK_CUDA(cudaMalloc3D(&d_data_in,
-                            make_cudaExtent(row_byte_size, height, depth)));
-    CHECK_CUDA(cudaMalloc3D(&d_data_out,
-                            make_cudaExtent(row_byte_size, height, depth)));
+    // describe data inside texture: 1-component floating point value in this case    
+    const int BITS_PER_BYTE = 8;
+    cudaChannelFormatDesc desc = cudaCreateChannelDesc(
+                                    sizeof(float) *  BITS_PER_BYTE,
+                                    0, 0, 0, cudaChannelFormatKindFloat );
+    cudaArray* d_data_in;
+    cudaArray* d_data_out;
+    CHECK_CUDA(cudaMalloc3DArray(&d_data_in, &desc,
+                             make_cudaExtent(row_byte_size, height, depth),
+                             cudaArraySurfaceLoadStore));
+    CHECK_CUDA(cudaMalloc3DArray(&d_data_out, &desc,
+                             make_cudaExtent(row_byte_size, height, depth),
+                             cudaArraySurfaceLoadStore));
    
   
     const dim3 threads_per_block = 
         dim3(threads_per_block_x, threads_per_block_y, threads_per_block_z);
-    const dim3 pitched_offset(ioffset + d_data_in.pitch / sizeof(REAL_T),
-                              joffset, koffset);
     const dim3 offset(ioffset, joffset, koffset);
     const dim3 global_grid_size(width, height, depth);
     
@@ -150,42 +156,45 @@ int main(int argc, char** argv) {
     memcpy_params.srcArray = 0;
     memcpy_params.srcPos = make_cudaPos(0,0,0);
     memcpy_params.srcPtr = host_ptr;
-    memcpy_params.dstArray = 0;
+    memcpy_params.dstArray = d_data_in;
     memcpy_params.dstPos = make_cudaPos(0, 0, 0);
-    memcpy_params.dstPtr = d_data_in;
+    memcpy_params.dstPtr = make_cudaPitchedPtr(0, 0, 0, 0);
     memcpy_params.extent = make_cudaExtent(row_byte_size, height, depth);
     memcpy_params.kind = cudaMemcpyHostToDevice;
 
 
     CHECK_CUDA(cudaMemcpy3D(&memcpy_params));
-    memcpy_params.dstPtr = d_data_out;
+    memcpy_params.dstArray = d_data_out;
     CHECK_CUDA(cudaMemcpy3D(&memcpy_params));
 
     //GPU                     
     CUDAEventTimer gpu_timer;
     gpu_timer.start();
+
     //compute
     if(axis == 0)
         cuda_compute
-               (nsteps, (REAL_T*)d_data_in.ptr, (REAL_T*)d_data_out.ptr,
-                pitched_offset,
-                global_grid_size, blocks, threads_per_block, diffusion_3d(),
-                do_all_3d_2_gpu<REAL_T, diffusion_3d>);
+               (nsteps, d_data_in, d_data_out, in_surface, out_surface,
+                offset,
+                global_grid_size, blocks, threads_per_block,
+                diffusion_3d_surface(),
+                do_all_3d_2_gpu_surf<REAL_T, diffusion_3d_surface>);
+#if 0               
     else if(axis == 'x')
         cuda_compute
-               (nsteps, (REAL_T*)d_data_in.ptr, (REAL_T*)d_data_out.ptr,
+               (nsteps, d_data_in, d_data_out, &in_surface, &out_surface,
                 pitched_offset,
                 global_grid_size, blocks, threads_per_block, diffusion_3d(),
                 do_all_3d_2_x_gpu<REAL_T, diffusion_3d>);
     else if(axis == 'y')
         cuda_compute
-               (nsteps, (REAL_T*)(REAL_T*)d_data_in.ptr, (REAL_T*)d_data_out.ptr,
+               (nsteps, d_data_in, d_data_out, &in_surface, &out_surface,
                 pitched_offset,
                 global_grid_size, blocks, threads_per_block, diffusion_3d(),
                 do_all_3d_2_y_gpu<REAL_T, diffusion_3d>);
     else if(axis == 'z')
         cuda_compute
-               (nsteps, (REAL_T*)d_data_in.ptr, (REAL_T*)d_data_out.ptr,
+               (nsteps, d_data_in, d_data_out, &in_surface, &out_surface,
                 pitched_offset,
                 global_grid_size, blocks, threads_per_block, diffusion_3d(),
                 do_all_3d_2_z_gpu<REAL_T, diffusion_3d>);                                                                
@@ -198,7 +207,8 @@ int main(int argc, char** argv) {
                   << " threads per block: " << threads_per_block << std::endl
                   << " grid: " << global_grid_size << std::endl; 
         return -1;
-    }       
+    }
+#endif           
     std::cout << "GPU: " << gpu_timer.elapsed() << std::endl;
     
     //CPU
@@ -212,8 +222,10 @@ int main(int argc, char** argv) {
     std::cout << "CPU: " << ms << std::endl;
     
     //copy data back
-    memcpy_params.srcPtr = d_data_out;
+    memcpy_params.srcArray = d_data_out;
+    memcpy_params.dstArray = 0;
     memcpy_params.dstPtr = host_ptr;
+    memcpy_params.srcPtr = make_cudaPitchedPtr(0, 0, 0, 0);
     cudaMemcpy3D(&memcpy_params);
 
     //compare results: h_data holds the data transferred from the GPU
@@ -237,8 +249,8 @@ int main(int argc, char** argv) {
     std::cout << std::endl;
 #endif     
     //free resources
-    cudaFree(d_data_out.ptr);
-    cudaFree(d_data_in.ptr);
+    cudaFreeArray(d_data_out);
+    cudaFreeArray(d_data_in);
     return 0;
 }
 

@@ -31,6 +31,39 @@ void cuda_compute(int nsteps,
     if(nsteps % 2 == 0 ) std::swap(d_data_in, d_data_out);
 }
 
+
+template < typename FunT, typename KernelT >
+void cuda_compute(int nsteps,
+                  cudaArray* d_data_in,
+                  cudaArray* d_data_out,
+                  surface<void, 3> in_surface,
+                  surface<void, 3> out_surface,
+                  dim3 offset,
+                  dim3 global_grid_size,
+                  dim3 blocks,
+                  dim3 threads_per_block, 
+                  FunT operation,
+                  KernelT kernel) {
+    
+    for(int step = 0; step != nsteps; ++step) {
+        if(step % 2 == 0) {
+            cudaBindSurfaceToArray(in_surface, d_data_in);
+            cudaBindSurfaceToArray(out_surface, d_data_out);
+        } else {
+            cudaBindSurfaceToArray(out_surface, d_data_in);
+            cudaBindSurfaceToArray(in_surface, d_data_out);
+        } 
+        kernel<<<blocks, threads_per_block>>>
+               (in_surface,
+                out_surface,
+                offset,
+                global_grid_size,                                          
+                operation);
+    }
+    if(nsteps % 2 == 0 ) std::swap(d_data_in, d_data_out);
+}
+
+
 template < typename T, typename FunT, typename KernelT >
 void cpu_compute(int nsteps,
                  T* d_data_in,

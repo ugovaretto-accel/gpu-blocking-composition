@@ -62,7 +62,6 @@ int main(int argc, char** argv) {
     const int threads_per_block_z = axis == 0 ? atoi(argv[6]) : 1;
     const int nsteps = atoi(argv[7]);
     const size_t size = width * height * depth;
-    const size_t byte_size = size * sizeof(REAL_T);
     const size_t row_byte_size = width * sizeof(REAL_T);
     
 
