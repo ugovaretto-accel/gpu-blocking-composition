@@ -22,6 +22,9 @@ std::ostream& operator<<(std::ostream& os, const dim3 d) {
     return os;
 }
 
+#define cc { \
+    std::cout << __LINE__ << std::endl; \
+}
 
 typedef float REAL_T;
 
@@ -159,13 +162,13 @@ int main(int argc, char** argv) {
     memcpy_params.dstArray = d_data_in;
     memcpy_params.dstPos = make_cudaPos(0, 0, 0);
     memcpy_params.dstPtr = make_cudaPitchedPtr(0, 0, 0, 0);
-    memcpy_params.extent = make_cudaExtent(row_byte_size, height, depth);
+    memcpy_params.extent = make_cudaExtent(width, height, depth);
     memcpy_params.kind = cudaMemcpyHostToDevice;
 
 
-    CHECK_CUDA(cudaMemcpy3D(&memcpy_params));
+    CHECK_CUDA(cudaMemcpy3D(&memcpy_params));   
     memcpy_params.dstArray = d_data_out;
-    CHECK_CUDA(cudaMemcpy3D(&memcpy_params));
+    CHECK_CUDA(cudaMemcpy3D(&memcpy_params));    
 
     //GPU                     
     CUDAEventTimer gpu_timer;
