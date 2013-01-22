@@ -204,14 +204,17 @@ int main(int argc, char** argv) {
     //CPU
     Timer cpu_timer;
     cpu_timer.Start();
-    cpu_compute
-           (nsteps, &h_data_in[0], &h_data_out[0], offset,
-            global_grid_size, diffusion_3d(),
+    REAL_T* out = cpu_compute(nsteps,
+                              &h_data_in[0],
+                              &h_data_out[0],
+                              offset,
+                              global_grid_size, diffusion_3d(),
             do_all_3d_2_cpu<REAL_T, diffusion_3d>);
     const double ms = cpu_timer.Stop();
     std::cout << "CPU: " << ms << std::endl;
     
-    //copy data backr
+    //copy data back
+    host_ptr.ptr = &h_data[0];
     memcpy_params.srcArray = d_data_out;
     memcpy_params.dstArray = 0;
     memcpy_params.dstPtr = host_ptr;
@@ -223,7 +226,7 @@ int main(int argc, char** argv) {
     //                 h_data_out holds the data computed on the CPU  
     std::cout << "Valid: " << std::boolalpha
               << std::equal(h_data.begin(), h_data.end(),
-                            h_data_out.begin(), distance< REAL_T >(EPS))
+                            out, distance< REAL_T >(EPS))
               << std::endl;
 #if 0
     //print something out
@@ -233,7 +236,7 @@ int main(int argc, char** argv) {
                     global_grid_size,
                     print<REAL_T>());      
     std::cout << "\n=========================================\n";    
-    do_all_3d_1_cpu(&h_data_out[0], 
+    do_all_3d_1_cpu(out, 
                     offset,
                     global_grid_size,
                     print<REAL_T>());      

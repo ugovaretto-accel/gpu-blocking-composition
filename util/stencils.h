@@ -79,6 +79,7 @@ struct diffusion_3d_surface {
     T operator()(const dim3& center) const {
         T v;
         surf3Dread(&v, in_surface, center.x * sizeof(T), center.y, center.z );
+        //printf("%f\n", v);
         return v + T(0.1) * l3d(center); 
     }
     laplacian_3d_surface< T > l3d;

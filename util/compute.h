@@ -79,5 +79,5 @@ T* cpu_compute(int nsteps,
         std::swap(data_in, data_out);
     }
 
-    return nsteps % 2 != 0 ? data_out : data_in;
+    return nsteps % 2 != 0 ? data_in : data_out;
 }
