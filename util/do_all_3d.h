@@ -101,7 +101,7 @@ __global__ void do_all_3d_2_gpu_surf(dim3 offset,
     const int y = blockDim.y * blockIdx.y + threadIdx.y + offset.y;
     const int z = blockDim.z * blockIdx.z + threadIdx.z + offset.z;
     T v;
-    v = f(dim3(x, y, z), global_grid_size);
+    v = f(dim3(x, y, z));
     surf3Dwrite(v, out_surface, x * sizeof(T), y, z);
 }
 #endif

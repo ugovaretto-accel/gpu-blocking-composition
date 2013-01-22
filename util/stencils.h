@@ -39,8 +39,7 @@ struct diffusion_3d {
 template < typename T > 
 struct laplacian_3d_surface {
     __host__ __device__
-    T operator()(const dim3& center,
-                 const dim3& in_surface_size) const {
+    T operator()(const dim3& center) const {
         T v;
         surf3Dread(&v, in_surface,
                    center.x * sizeof(T),
@@ -77,11 +76,10 @@ struct laplacian_3d_surface {
 template <typename T>
 struct diffusion_3d_surface {
     __host__ __device__
-    T operator()(const dim3& center,
-                 const dim3& in_surface_size) const {
+    T operator()(const dim3& center) const {
         T v;
         surf3Dread(&v, in_surface, center.x * sizeof(T), center.y, center.z );
-        return v + T(0.1) * l3d(center, in_surface_size); 
+        return v + T(0.1) * l3d(center); 
     }
     laplacian_3d_surface< T > l3d;
 };
