@@ -183,10 +183,10 @@ int main(int argc, char** argv) {
     //CPU
     Timer cpu_timer;
     cpu_timer.Start();
-    cpu_compute
-           (nsteps, &h_data_in[0], &h_data_out[0], offset,
-            global_grid_size, diffusion_3d(),
-            do_all_3d_2_cpu<REAL_T, diffusion_3d>);
+    REAL_T* data_out = cpu_compute
+                        (nsteps, &h_data_in[0], &h_data_out[0], offset,
+                         global_grid_size, diffusion_3d(),
+                         do_all_3d_2_cpu<REAL_T, diffusion_3d>);
     const double ms = cpu_timer.Stop();
     std::cout << "CPU: " << ms << std::endl;
     
@@ -197,7 +197,7 @@ int main(int argc, char** argv) {
     //                 h_data_out holds the data computed on the CPU  
     std::cout << "Valid: " << std::boolalpha
               << std::equal(h_data.begin(), h_data.end(),
-                            h_data_out.begin(), distance< REAL_T >(EPS))
+                            data_out, distance< REAL_T >(EPS))
               << std::endl;
 #if 0
     //print something out

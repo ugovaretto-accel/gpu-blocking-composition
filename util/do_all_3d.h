@@ -91,21 +91,20 @@ __global__ void do_all_3d_2_gpu(const T* in,
     out[idx] = f(in, dim3(x, y, z), global_grid_size);
 }
 
-
+#ifdef ENABLE_SURFACE
 //launch with size of core space
 template < typename T, typename FunT >
-__global__ void do_all_3d_2_gpu_surf(surface<void, 3> in,
-                                     surface<void, 3> out,
-                                     dim3 offset,
+__global__ void do_all_3d_2_gpu_surf(dim3 offset,
                                      dim3 global_grid_size, //core space + 2 * offset
                                      FunT f ) {
     const int x = blockDim.x * blockIdx.x + threadIdx.x + offset.x;
     const int y = blockDim.y * blockIdx.y + threadIdx.y + offset.y;
     const int z = blockDim.z * blockIdx.z + threadIdx.z + offset.z;
     T v;
-    v = f(in, dim3(x, y, z), global_grid_size);
-    surf3Dwrite(v, out, x * sizeof(T), y, z);
+    v = f(dim3(x, y, z), global_grid_size);
+    surf3Dwrite(v, out_surface, x * sizeof(T), y, z);
 }
+#endif
 
 //launch with size of core space
 

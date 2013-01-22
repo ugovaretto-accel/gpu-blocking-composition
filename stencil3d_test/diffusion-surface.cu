@@ -3,6 +3,12 @@
 #include "../util/CUDAEventTimer.h"
 #include "../util/Timer.h"
 #include "../util/compute_blocks.h"
+
+typedef float REAL_T;
+
+surface<void, 3> in_surface;
+surface<void, 3> out_surface;
+
 #include "../util/do_all_3d.h"
 #include "../util/compute.h"
 #include "../util/stencils.h"
@@ -25,11 +31,6 @@ std::ostream& operator<<(std::ostream& os, const dim3 d) {
 #define cc { \
     std::cout << __LINE__ << std::endl; \
 }
-
-typedef float REAL_T;
-
-surface<void, 3> in_surface;
-surface<void, 3> out_surface;
 
 REAL_T EPS = REAL_T(0.000001);
 
@@ -177,30 +178,15 @@ int main(int argc, char** argv) {
     //compute
     if(axis == 0)
         cuda_compute
-               (nsteps, d_data_in, d_data_out, in_surface, out_surface,
+               (nsteps, d_data_in, d_data_out,
                 offset,
                 global_grid_size, blocks, threads_per_block,
                 diffusion_3d_surface< REAL_T >(),
                 do_all_3d_2_gpu_surf< REAL_T, diffusion_3d_surface< REAL_T > >);
-#if 0               
-    else if(axis == 'x')
-        cuda_compute
-               (nsteps, d_data_in, d_data_out, &in_surface, &out_surface,
-                pitched_offset,
-                global_grid_size, blocks, threads_per_block, diffusion_3d(),
-                do_all_3d_2_x_gpu<REAL_T, diffusion_3d>);
-    else if(axis == 'y')
-        cuda_compute
-               (nsteps, d_data_in, d_data_out, &in_surface, &out_surface,
-                pitched_offset,
-                global_grid_size, blocks, threads_per_block, diffusion_3d(),
-                do_all_3d_2_y_gpu<REAL_T, diffusion_3d>);
-    else if(axis == 'z')
-        cuda_compute
-               (nsteps, d_data_in, d_data_out, &in_surface, &out_surface,
-                pitched_offset,
-                global_grid_size, blocks, threads_per_block, diffusion_3d(),
-                do_all_3d_2_z_gpu<REAL_T, diffusion_3d>);                                                                
+    else {
+        std::cout << "x, y, z iteration enabled for non-array version only"
+                  << std::endl;
+    }                                                               
     gpu_timer.stop();
     cudaError_t error = cudaGetLastError();
     if(error != cudaSuccess) {
@@ -211,7 +197,8 @@ int main(int argc, char** argv) {
                   << " grid: " << global_grid_size << std::endl; 
         return -1;
     }
-#endif           
+
+
     std::cout << "GPU: " << gpu_timer.elapsed() << std::endl;
     
     //CPU
@@ -224,12 +211,13 @@ int main(int argc, char** argv) {
     const double ms = cpu_timer.Stop();
     std::cout << "CPU: " << ms << std::endl;
     
-    //copy data back
+    //copy data backr
     memcpy_params.srcArray = d_data_out;
     memcpy_params.dstArray = 0;
     memcpy_params.dstPtr = host_ptr;
     memcpy_params.srcPtr = make_cudaPitchedPtr(0, 0, 0, 0);
-    cudaMemcpy3D(&memcpy_params);
+    memcpy_params.kind = cudaMemcpyDeviceToHost;
+    CHECK_CUDA(cudaMemcpy3D(&memcpy_params));
 
     //compare results: h_data holds the data transferred from the GPU
     //                 h_data_out holds the data computed on the CPU  
