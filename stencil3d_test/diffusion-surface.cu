@@ -69,7 +69,7 @@ int main(int argc, char** argv) {
     const int nsteps = atoi(argv[7]);
     const size_t size = width * height * depth;
     const size_t row_byte_size = width * sizeof(REAL_T);
-    
+       
 
     cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, 0);
@@ -154,7 +154,7 @@ int main(int argc, char** argv) {
 
     cudaPitchedPtr host_ptr = 
         make_cudaPitchedPtr(&h_data_in[0], row_byte_size, width, height);
-
+    host_ptr.pitch = row_byte_size;   
     cudaMemcpy3DParms memcpy_params;
     //configure for device to host copy
     memcpy_params.srcArray = 0;
