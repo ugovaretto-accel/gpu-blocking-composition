@@ -23,7 +23,7 @@ std::ostream& operator<<(std::ostream& os, const dim3 d) {
 }
 
 
-typedef double REAL_T;
+typedef float REAL_T;
 
 surface<void, 3> in_surface;
 surface<void, 3> out_surface;
@@ -177,8 +177,8 @@ int main(int argc, char** argv) {
                (nsteps, d_data_in, d_data_out, in_surface, out_surface,
                 offset,
                 global_grid_size, blocks, threads_per_block,
-                diffusion_3d_surface(),
-                do_all_3d_2_gpu_surf<REAL_T, diffusion_3d_surface>);
+                diffusion_3d_surface< REAL_T >(),
+                do_all_3d_2_gpu_surf< REAL_T, diffusion_3d_surface< REAL_T > >);
 #if 0               
     else if(axis == 'x')
         cuda_compute

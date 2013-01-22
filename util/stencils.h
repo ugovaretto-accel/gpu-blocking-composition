@@ -34,55 +34,56 @@ struct diffusion_3d {
     }
     laplacian_3d l3d;
 };
+ template < typename T > 
 struct laplacian_3d_surface {
-    template < typename T > 
     __host__ __device__
-    T operator()(const surface<void, 3> grid, 
+    T operator()(surface<void, 3> grid, 
                  const dim3& center,
                  const dim3& grid_size) const {
         T v;
-        surf3DRead(&v, grid,
+        surf3Dread(&v, grid,
                    center.x * sizeof(T),
                    center.y, center.z);
-        T ret += T(-6) * v;
-        surf3DRead(&v, grid,
+        T ret = T(-6) * v;
+        surf3Dread(&v, grid,
                    (center.x + 1) * sizeof(T),
                    center.y, center.z);
         ret += v;
-        surf3DRead(&v, grid,
+        surf3Dread(&v, grid,
                    (center.x - 1) * sizeof(T),
                    center.y, center.z);
         ret += v;
-        surf3DRead(&v, grid,
+        surf3Dread(&v, grid,
                    center.x * sizeof(T),
                    center.y + 1, center.z);
         ret += v;
-        surf3DRead(&v, grid,
+        surf3Dread(&v, grid,
                    center.x * sizeof(T),
                    center.y - 1, center.z);
         ret += v;
-        surf3DRead(&v, grid,
+        surf3Dread(&v, grid,
                    center.x * sizeof(T),
                    center.y, center.z + 1);
         ret += v;
-        surf3DRead(&v, grid,
+        surf3Dread(&v, grid,
                    center.x * sizeof(T),
                    center.y, center.z - 1);
         ret += v;
         return ret;
     }
 };
+
+template <typename T>
 struct diffusion_3d_surface {
-    template < typename T >  
     __host__ __device__
     T operator()(surface<void, 3> grid,
                  const dim3& center,
                  const dim3& grid_size) const {
         T v;
-        surf3DRead(&v, grid, center.x * sizeof(T), center.y, center.z );
-        return v + T(0.1) * l3d(surf, center, grid_size); 
+        surf3Dread(&v, grid, center.x * sizeof(T), center.y, center.z );
+        return v + T(0.1) * l3d(grid, center, grid_size); 
     }
-    laplacian_3d_surface l3d;
+    laplacian_3d_surface< T > l3d;
 };
 
 

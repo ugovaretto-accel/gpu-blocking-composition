@@ -60,7 +60,6 @@ void cuda_compute(int nsteps,
                 global_grid_size,                                          
                 operation);
     }
-    if(nsteps % 2 == 0 ) std::swap(d_data_in, d_data_out);
 }
 
 
