@@ -183,7 +183,7 @@ int main(int argc, char** argv) {
                 offset,
                 global_grid_size, blocks, threads_per_block,
                 diffusion_3d_texture< REAL_T >(),
-                do_all_3d_2_gpu_surf< REAL_T, diffusion_3d_texture< REAL_T > >);
+                do_all_3d_2_gpu_tex< REAL_T, diffusion_3d_texture< REAL_T > >);
     else {
         std::cout << "x, y, z iteration enabled for non-array version only"
                   << std::endl;

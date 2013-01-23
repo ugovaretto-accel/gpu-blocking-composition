@@ -89,10 +89,12 @@ struct diffusion_3d_surface {
 template < typename T > 
 struct laplacian_3d_texture {
     __device__
-    T operator()(const dim3& center) const {     
-        T ret = T(-6) * tex3D(in_texture, center.x, center.y, center.x);
+    T operator()(const dim3& center) const {
+        const T v = tex3D(in_texture, center.x, center.y, center.z);
+        //printf("%d %d %d: %f\n", center.x, center.y, center.z, v);  
+        T ret = T(-6) * v;
         ret += tex3D(in_texture, center.x - 1,
-                      center.y, center.z);
+                     center.y, center.z);
         ret += tex3D(in_texture, center.x + 1,
                      center.y, center.z);
         ret += tex3D(in_texture, center.x,
@@ -107,14 +109,47 @@ struct laplacian_3d_texture {
     }
 };
 
+template <> 
+struct laplacian_3d_texture {
+    __device__
+    T operator()(const dim3& center) const {
+        const T v = tex3D(in_texture, center.x, center.y, center.z);
+        //printf("%d %d %d: %f\n", center.x, center.y, center.z, v);  
+        T ret = T(-6) * v;
+        ret += tex3D(in_texture, center.x - 1,
+                     center.y, center.z);
+        ret += tex3D(in_texture, center.x + 1,
+                     center.y, center.z);
+        ret += tex3D(in_texture, center.x,
+                     center.y + 1, center.z);
+        ret += tex3D(in_texture, center.x,
+                     center.y - 1, center.z);
+        ret += tex3D(in_texture, center.x,
+                     center.y, center.z + 1);
+        ret += tex3D(in_texture, center.x,
+                     center.y, center.z - 1);
+        return ret;
+    }
+};
 
 template <typename T>
 struct diffusion_3d_texture {
     __device__
     T operator()(const dim3& center) const {
-        const T v = tex3D(in_texture, center.x, center.y, center.z );
-        //printf("%f\n", v);
+        const T v = tex3D(in_texture, center.x, center.y, center.z);
+        //printf("%d %d %d: %f\n", center.x, center.y, center.z, v);   
         return v + T(0.1) * l3d(center); 
+    }
+    laplacian_3d_texture< T > l3d;
+};
+
+template <>
+struct diffusion_3d_texture<double> {
+    __device__
+    T operator()(const dim3& center) const {
+        const int2 v = tex3D(in_texture, center.x, center.y, center.z);
+        //printf("%d %d %d: %f\n", center.x, center.y, center.z, v);   
+        return  __hiloint2double(v.y, v.x)+ T(0.1) * l3d(center); 
     }
     laplacian_3d_texture< T > l3d;
 };

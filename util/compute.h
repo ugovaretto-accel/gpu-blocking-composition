@@ -74,12 +74,12 @@ void cuda_compute_tex(int nsteps,
     for(int step = 0; step != nsteps; ++step) {
         if(step % 2 == 0) {
             CHECK_CUDA(cudaBindTextureToArray(in_texture, d_data_in));
-            CHECK_CUDA(cudaBindSurfaceToArray(in_surface, d_data_in));
+            //CHECK_CUDA(cudaBindSurfaceToArray(in_surface, d_data_in));
             CHECK_CUDA(cudaBindSurfaceToArray(out_surface, d_data_out));
         } else {
             CHECK_CUDA(cudaBindTextureToArray(in_texture, d_data_out)); 
             CHECK_CUDA(cudaBindSurfaceToArray(out_surface, d_data_in));
-            CHECK_CUDA(cudaBindSurfaceToArray(in_surface, d_data_out));
+            //CHECK_CUDA(cudaBindSurfaceToArray(in_surface, d_data_out));
         } 
         kernel<<<blocks, threads_per_block>>>
                (offset,
