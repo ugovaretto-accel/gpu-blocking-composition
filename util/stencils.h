@@ -29,7 +29,9 @@ struct diffusion_3d {
     T operator()(const T* grid,
                  const dim3& center,
                  const dim3& grid_size) const {
-        return gv(grid, center, 0, 0, 0, grid_size)
+        const T v = gv(grid, center, 0, 0, 0, grid_size);
+        //printf("%d %d %d: %f\n", center.x, center.y, center.z, v);
+        return v
                +  T(0.1) * l3d(grid, center, grid_size); 
     }
     laplacian_3d l3d;
@@ -115,25 +117,25 @@ struct laplacian_3d_texture<double> {
     double operator()(const dim3& center) const {
         int2 v = tex3D(in_texture, center.x, center.y, center.z);
         //printf("%d %d %d: %f\n", center.x, center.y, center.z, v);  
-        double ret = -6 * __hiloint2double(v.x, v.y);
+        double ret = -6 * __hiloint2double(v.y, v.x);
         v = tex3D(in_texture, center.x - 1,
                   center.y, center.z);
-        ret += __hiloint2double(v.x, v.y);
+        ret += __hiloint2double(v.y, v.x);
         v = tex3D(in_texture, center.x + 1,
                   center.y, center.z);
-        ret += __hiloint2double(v.x, v.y);
+        ret += __hiloint2double(v.y, v.x);
         v = tex3D(in_texture, center.x,
                   center.y + 1, center.z);
-        ret += __hiloint2double(v.x, v.y);
+        ret += __hiloint2double(v.y, v.x);
         v = tex3D(in_texture, center.x,
                   center.y - 1, center.z);
-        ret += __hiloint2double(v.x, v.y); 
+        ret += __hiloint2double(v.y, v.x); 
         v = tex3D(in_texture, center.x,
                   center.y, center.z + 1);
-        ret += __hiloint2double(v.x, v.y);
+        ret += __hiloint2double(v.y, v.x);
         v = tex3D(in_texture, center.x,
                   center.y, center.z - 1);
-        ret += __hiloint2double(v.x, v.y);
+        ret += __hiloint2double(v.y, v.x);
         return ret;
     }
 };
@@ -155,7 +157,7 @@ struct diffusion_3d_texture<double> {
     double operator()(const dim3& center) const {
         const int2 v = tex3D(in_texture, center.x, center.y, center.z);
         //printf("%d %d %d: %f\n", center.x, center.y, center.z, v);   
-        return  __hiloint2double(v.x, v.y)+ 0.1 * l3d(center); 
+        return  __hiloint2double(v.y, v.x)+ 0.1 * l3d(center); 
     }
     laplacian_3d_texture< double > l3d;
 };

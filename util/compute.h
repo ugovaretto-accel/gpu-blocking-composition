@@ -30,7 +30,7 @@ void cuda_compute(int nsteps,
                       operation);
         std::swap(d_data_in, d_data_out);
     }
-    if(nsteps % 2 == 0 ) std::swap(d_data_in, d_data_out);
+    if(nsteps % 2 == 1 ) std::swap(d_data_in, d_data_out);
 }
 
 #ifdef ENABLE_SURFACE

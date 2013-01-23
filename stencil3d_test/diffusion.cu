@@ -23,8 +23,11 @@ std::ostream& operator<<(std::ostream& os, const dim3 d) {
 }
 
 
-
+#ifdef USE_DOUBLE
 typedef double REAL_T;
+#else
+typedef float REAL_T;
+#endif
 
 REAL_T EPS = REAL_T(0.000001);
 

@@ -103,12 +103,12 @@ int main(int argc, char** argv) {
     // assume size of int is 4 and size of double is 8
     const int HALF_DOUBLE_SIZE = sizeof(double) / 2;
     cudaChannelFormatDesc desc = cudaCreateChannelDesc(
-                                    HALF_DOUBLE_SIZE *  BITS_PER_BYTE,
-                                    HALF_DOUBLE_SIZE *  BITS_PER_BYTE,
+                                    HALF_DOUBLE_SIZE * BITS_PER_BYTE,
+                                    HALF_DOUBLE_SIZE * BITS_PER_BYTE,
                                     0, 0, cudaChannelFormatKindSigned);
 #else
     cudaChannelFormatDesc desc = cudaCreateChannelDesc(
-                                    sizeof(REAL_T) *  BITS_PER_BYTE,                                  
+                                    sizeof(REAL_T) * BITS_PER_BYTE,                                  
                                     0, 0, 0, cudaChannelFormatKindFloat);
 #endif    
     cudaArray* d_data_in;
