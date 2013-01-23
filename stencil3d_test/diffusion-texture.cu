@@ -4,11 +4,19 @@
 #include "../util/Timer.h"
 #include "../util/compute_blocks.h"
 
+#ifdef USE_DOUBLE
+typedef double REAL_T;
+#else
 typedef float REAL_T;
+#endif
 
 surface<void, 3> in_surface;
 surface<void, 3> out_surface;
+#ifdef USE_DOUBLE
+texture<int2, 3> in_texture;
+#else
 texture<REAL_T, 3> in_texture;
+#endif
 
 #include "../util/do_all_3d.h"
 #include "../util/compute.h"
@@ -90,9 +98,19 @@ int main(int argc, char** argv) {
 
     // describe data inside texture: 1-component floating point value in this case    
     const int BITS_PER_BYTE = 8;
+
+#ifdef USE_DOUBLE
+    // assume size of int is 4 and size of double is 8
+    const int HALF_DOUBLE_SIZE = sizeof(double) / 2;
     cudaChannelFormatDesc desc = cudaCreateChannelDesc(
-                                    sizeof(float) *  BITS_PER_BYTE,
-                                    0, 0, 0, cudaChannelFormatKindFloat );
+                                    HALF_DOUBLE_SIZE *  BITS_PER_BYTE,
+                                    HALF_DOUBLE_SIZE *  BITS_PER_BYTE,
+                                    0, 0, cudaChannelFormatKindSigned);
+#else
+    cudaChannelFormatDesc desc = cudaCreateChannelDesc(
+                                    sizeof(REAL_T) *  BITS_PER_BYTE,                                  
+                                    0, 0, 0, cudaChannelFormatKindFloat);
+#endif    
     cudaArray* d_data_in;
     cudaArray* d_data_out;
     CHECK_CUDA(cudaMalloc3DArray(&d_data_in, &desc,
