@@ -178,12 +178,12 @@ int main(int argc, char** argv) {
 
     //compute
     if(axis == 0)
-        cuda_compute
+        cuda_compute_tex
                (nsteps, d_data_in, d_data_out,
                 offset,
                 global_grid_size, blocks, threads_per_block,
-                diffusion_3d_surface< REAL_T >(),
-                do_all_3d_2_gpu_surf< REAL_T, diffusion_3d_surface< REAL_T > >);
+                diffusion_3d_texture< REAL_T >(),
+                do_all_3d_2_gpu_surf< REAL_T, diffusion_3d_texture< REAL_T > >);
     else {
         std::cout << "x, y, z iteration enabled for non-array version only"
                   << std::endl;

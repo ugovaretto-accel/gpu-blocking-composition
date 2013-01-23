@@ -100,10 +100,20 @@ __global__ void do_all_3d_2_gpu_surf(dim3 offset,
     const int x = blockDim.x * blockIdx.x + threadIdx.x + offset.x;
     const int y = blockDim.y * blockIdx.y + threadIdx.y + offset.y;
     const int z = blockDim.z * blockIdx.z + threadIdx.z + offset.z;
-    T v;
-    v = f(dim3(x, y, z));
+    const T v = f(dim3(x, y, z));
     surf3Dwrite(v, out_surface, x * sizeof(T), y, z);
 }
+/*//launch with size of core space
+template < typename T, typename FunT >
+__global__ void do_all_3d_2_gpu_tex(dim3 offset,
+                                    dim3 global_grid_size, //core space + 2 * offset
+                                    FunT f ) {
+    const int x = blockDim.x * blockIdx.x + threadIdx.x + offset.x;
+    const int y = blockDim.y * blockIdx.y + threadIdx.y + offset.y;
+    const int z = blockDim.z * blockIdx.z + threadIdx.z + offset.z;
+    const T v = f(dim3(x, y, z));
+    surf3Dwrite(v, out_surface, x * sizeof(T), y, z);
+}*/
 #endif
 
 //launch with size of core space
