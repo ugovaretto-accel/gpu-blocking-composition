@@ -91,6 +91,24 @@ __global__ void do_all_3d_2_gpu(const T* in,
     out[idx] = f(in, dim3(x, y, z), global_grid_size);
 }
 
+
+// //launch with size of core space
+// template < typename T, typename FunT, typename AccessorT = accessor >
+// __global__ void do_all_3d_2_gpu_acc(const T* in,
+//                               T* out,
+//                               dim3 offset,
+//                               dim3 global_grid_size, //core space + 2 * offset
+//                               FunT f ) {
+//     const AccessorT acc; 
+//     const int x = blockDim.x * blockIdx.x + threadIdx.x + offset.x;
+//     const int y = blockDim.y * blockIdx.y + threadIdx.y + offset.y;
+//     const int z = blockDim.z * blockIdx.z + threadIdx.z + offset.z;
+//     //const int idx = x + global_grid_size.x * (y  + z * global_grid_size.y);
+//     const dim3 pos = dim3(x, y, z); 
+//     acc(out, f(in, acc, pos, global_grid_size), pos, global_grid_size);
+// }
+
+
 #ifdef ENABLE_SURFACE
 //launch with size of core space
 template < typename T, typename FunT >
@@ -159,8 +177,8 @@ __global__ void do_all_3d_2_z_gpu(const T* in,
     const int y = blockDim.y * blockIdx.y + threadIdx.y + offset.y;
     const int xy = x + global_grid_size.x * y;
     const int slice_stride = global_grid_size.x * global_grid_size.y; 
-    for(int k = 0; k != global_grid_size.z - 2 * offset.z; ++k) {
-    	const int idx =  xy + (k + offset.z) * slice_stride;	
+    for(int k = offset.z; k != global_grid_size.z - 2 * offset.z; ++k) {
+    	const int idx =  xy + k * slice_stride;	
         out[idx] = f(in, dim3(x, y, k + offset.z), global_grid_size);
     }
     
