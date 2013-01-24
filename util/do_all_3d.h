@@ -170,16 +170,23 @@ __global__ void do_all_3d_2_gpu(const T* in,
 template < typename T, typename FunT > 
 __global__ void do_all_3d_2_z_gpu(const T* in,
 	                              T* out,
-	                              dim3 offset,
-/*core space + 2 * offset*/       dim3 global_grid_size, 
+	                              const dim3 offset,
+/*core space + 2 * offset*/     const dim3 global_grid_size, 
 	                              FunT f) {
+    const int slice_stride = global_grid_size.x * global_grid_size.y;
     const int x = blockDim.x * blockIdx.x + threadIdx.x + offset.x;
     const int y = blockDim.y * blockIdx.y + threadIdx.y + offset.y;
-    const int xy = x + global_grid_size.x * y;
-    const int slice_stride = global_grid_size.x * global_grid_size.y; 
-    for(int k = 0; k != global_grid_size.z - 2 * offset.z; ++k) {
-    	const int idx =  xy + (offset.z + k) * slice_stride;	
-      out[idx] = f(in, dim3(x, y, k + offset.z), global_grid_size);
+    const int xy = x + global_grid_size.x * y + offset.z * slice_stride;
+    const int bound = xy + (global_grid_size.z - 2 * offset.z) * slice_stride;
+    // int idx = xy + offset.z * slice_stride; 
+    // for(int k = 0; k < bound; ++k) {
+    //     idx += slice_stride;
+    //     out[idx] = f(in, idx/*dim3(x, y, k + offset.z)*/,
+    //                  global_grid_size);
+    // }
+    for(int idx = xy; idx != bound; idx += slice_stride) {
+        *(out + idx) = f(in, idx/*dim3(x, y, k + offset.z)*/,
+                     global_grid_size);
     }
     
 }

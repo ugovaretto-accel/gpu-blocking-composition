@@ -22,6 +22,21 @@ struct laplacian_3d {
              + gv(grid, center, 0, 0, -1, grid_size);
 
     }
+    template < typename T > 
+    __host__ __device__
+    T operator()(const T* grid, 
+                 size_t center,
+                 const dim3& grid_size) const {
+        
+        return T(-6) * gv(grid, center, 0, 0, 0, grid_size)
+             + gv(grid, center, 1, 0, 0, grid_size)
+             + gv(grid, center, -1, 0, 0, grid_size)
+             + gv(grid, center, 0, 1, 0, grid_size)
+             + gv(grid, center, 0, -1, 0, grid_size)
+             + gv(grid, center, 0, 0, 1, grid_size)
+             + gv(grid, center, 0, 0, -1, grid_size);
+
+    }
 };
 struct diffusion_3d {
     template < typename T >  
@@ -31,6 +46,16 @@ struct diffusion_3d {
                  const dim3& grid_size) const {
         const T v = gv(grid, center, 0, 0, 0, grid_size);
         //printf("%d %d %d: %f\n", center.x, center.y, center.z, v);
+        return v
+               +  T(0.1) * l3d(grid, center, grid_size); 
+    }
+    template < typename T >  
+    __host__ __device__
+    T operator()(const T* grid,
+                 size_t center,
+                 const dim3& grid_size) const {
+        const T v = gv(grid, center, 0, 0, 0, grid_size);
+        //printf("%d: %f\n", center, v);
         return v
                +  T(0.1) * l3d(grid, center, grid_size); 
     }
