@@ -179,7 +179,7 @@ __global__ void do_all_3d_2_z_gpu(const T* in,
     const int slice_stride = global_grid_size.x * global_grid_size.y; 
     for(int k = 0; k != global_grid_size.z - 2 * offset.z; ++k) {
     	const int idx =  xy + (offset.z + k) * slice_stride;	
-        out[idx] = f(in, dim3(x, y, k + offset.z), global_grid_size);
+      out[idx] = f(in, dim3(x, y, k + offset.z), global_grid_size);
     }
     
 }
