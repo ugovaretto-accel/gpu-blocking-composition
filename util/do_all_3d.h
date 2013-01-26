@@ -171,7 +171,7 @@ template < typename T, typename FunT >
 __global__ void do_all_3d_2_z_gpu(const T* in,
 	                              T* out,
 	                              const dim3 offset,
-/*core space + 2 * offset*/     const dim3 global_grid_size, 
+/*core space + 2 * offset*/       const dim3 global_grid_size, 
 	                              FunT f) {
     const int slice_stride = global_grid_size.x * global_grid_size.y;
     const int x = blockDim.x * blockIdx.x + threadIdx.x + offset.x;
@@ -185,8 +185,8 @@ __global__ void do_all_3d_2_z_gpu(const T* in,
     //                  global_grid_size);
     // }
     for(int idx = xy; idx != bound; idx += slice_stride) {
-        *(out + idx) = f(in, idx/*dim3(x, y, k + offset.z)*/,
-                     global_grid_size);
+        out[idx] = f(in + idx,
+                     global_grid_size.x, slice_stride);
     }
     
 }

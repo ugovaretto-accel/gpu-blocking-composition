@@ -23,19 +23,29 @@ struct laplacian_3d {
 
     }
     template < typename T > 
-    __host__ __device__
-    T operator()(const T* grid, 
-                 size_t center,
-                 const dim3& grid_size) const {
-        
-        return T(-6) * gv(grid, center, 0, 0, 0, grid_size)
-             + gv(grid, center, 1, 0, 0, grid_size)
-             + gv(grid, center, -1, 0, 0, grid_size)
-             + gv(grid, center, 0, 1, 0, grid_size)
-             + gv(grid, center, 0, -1, 0, grid_size)
-             + gv(grid, center, 0, 0, 1, grid_size)
-             + gv(grid, center, 0, 0, -1, grid_size);
+    __device__
+    T operator()(const T* p, 
+                 const int row_stride,
+                 const int slice_stride) const {  
+#if __CUDA_ARCH__ >= 35 && LDG       
+        const T v4 = __ldg(p + row_stride);
+        const T v5 = __ldg(p - row_stride);
+        const T v6 = __ldg(p + slice_stride);
+        const T v7 = __ldg(p - slice_stride);
+        const T v1 = __ldg(p);
+        const T v2 = __ldg(p - 1);
+        const T v3 = __ldg(p + 1);
+        return T(-6)*v1 + v2 + v3 + v4 + v5 + v6 + v7;
+#else        
+        return T(-6) * p[0]
+             + p[1]
+             + p[-1]
+             + p[slice_stride]
+             + p[-slice_stride]
+             + p[row_stride]
+             + p[-slice_stride];
 
+#endif             
     }
 };
 struct diffusion_3d {
@@ -50,14 +60,17 @@ struct diffusion_3d {
                +  T(0.1) * l3d(grid, center, grid_size); 
     }
     template < typename T >  
-    __host__ __device__
+    __device__
     T operator()(const T* grid,
-                 size_t center,
-                 const dim3& grid_size) const {
-        const T v = gv(grid, center, 0, 0, 0, grid_size);
-        //printf("%d: %f\n", center, v);
+                 int row_stride,
+                 int slice_stride) const {
+#if __CUDA_ARCH__ >= 35 && LDG
+        const T v = __ldg(grid);
+#else       
+        const T v = grid[0]; 
+#endif        //printf("%d: %f\n", center, v);
         return v
-               +  T(0.1) * l3d(grid, center, grid_size); 
+               +  T(0.1) * l3d(grid, row_stride, slice_stride); 
     }
     laplacian_3d l3d;
 };

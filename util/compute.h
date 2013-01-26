@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <cuda_runtime.h>
 #include "cuda_error.h"
-
+#include "CUDAEventTimer.h"
 
 //T: data type
 //FunT: stencil operator applied to every grid element
@@ -12,24 +12,29 @@
 
 template < typename T, typename FunT, typename KernelT >
 void cuda_compute(int nsteps,
-                  T*& d_data_in,
-                  T*& d_data_out,
+                  T* d_data_in,
+                  T* d_data_out,
                   dim3 offset,
                   dim3 global_grid_size,
                   dim3 blocks,
                   dim3 threads_per_block, 
                   FunT operation,
                   KernelT kernel) {
-
+    //CUDAEventTimer t;
+    //double total  = 0;
     for(int step = 0; step != nsteps; ++step) {  
-              kernel<<<blocks, threads_per_block>>>
+            //t.start();  
+            kernel<<<blocks, threads_per_block>>>
                      (d_data_in,
                       d_data_out,
                       offset,
                       global_grid_size,                                          
                       operation);
+            //t.stop();
+            //total += t.elapsed();
         std::swap(d_data_in, d_data_out);
     }
+    //std::cout << "TOTAL: " << total << std::endl;
     if(nsteps % 2 == 1 ) std::swap(d_data_in, d_data_out);
 }
 

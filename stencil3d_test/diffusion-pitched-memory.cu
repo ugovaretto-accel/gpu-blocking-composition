@@ -84,9 +84,9 @@ int main(int argc, char** argv) {
     cudaPitchedPtr d_data_in;
     cudaPitchedPtr d_data_out;
     CHECK_CUDA(cudaMalloc3D(&d_data_in,
-                            make_cudaExtent(row_byte_size, height, depth)));
+                            make_cudaExtent(512*sizeof(REAL_T)/*row_byte_size*/, height, depth)));
     CHECK_CUDA(cudaMalloc3D(&d_data_out,
-                            make_cudaExtent(row_byte_size, height, depth)));
+                            make_cudaExtent(512*sizeof(REAL_T)/*row_byte_size*/, height, depth)));
    
   
     const dim3 threads_per_block = 

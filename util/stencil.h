@@ -1,5 +1,17 @@
 #pragma once
 
+//halo_size = total halo width(left + right)
+//all dimensions in bytes
+inline size_t padded_halo_size(size_t halo_size,
+	                           const size_t buffer_size,
+                               const size_t alignment_size,
+                               const size_t element_size) {
+    while((buffer_size + halo_size) % alignment_size) {
+    	halo_size += element_size;
+    }
+    return halo_size / element_size;
+}
+
 template < typename T >
 __host__ __device__
 T grid_3d_value_offset(const T* data,

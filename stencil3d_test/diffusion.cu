@@ -29,10 +29,9 @@ typedef double REAL_T;
 typedef float REAL_T;
 #endif
 
-REAL_T EPS = REAL_T(0.000001);
+REAL_T EPS = REAL_T(0.0000001);
 
 int main(int argc, char** argv) {
-    cudaDeviceReset();
     if(argc < 8) {
         std::cout << "usage: " << argv[0]
                   << " width height depth <threads per block x y z> nsteps "
@@ -52,7 +51,14 @@ int main(int argc, char** argv) {
     } 
 
     //temporary for ease of testing with COSMO
+#ifndef ALIGNED_ROWS    
     const int ioffset = 3;
+#else
+    const int ioffset = padded_halo_size(2 * 3 * sizeof(REAL_T),
+                                         atoi(argv[1]) * sizeof(REAL_T),
+                                         256,
+                                         sizeof(REAL_T)) / 2; 
+#endif    
     const int joffset = 3;
     const int koffset = 1;
 
@@ -147,7 +153,8 @@ int main(int argc, char** argv) {
                           byte_size,
                           cudaMemcpyHostToDevice));
 
-    //GPU                     
+    //GPU 
+    { // the event timer *must* be destroyed *before* the final cudaDeviceReset is called                    
     CUDAEventTimer gpu_timer;
     gpu_timer.start();
     //compute
@@ -182,6 +189,7 @@ int main(int argc, char** argv) {
         return -1;
     }       
     std::cout << "GPU: " << gpu_timer.elapsed() << std::endl;
+    }
     
     //CPU
     Timer cpu_timer;
@@ -194,7 +202,7 @@ int main(int argc, char** argv) {
     std::cout << "CPU: " << ms << std::endl;
     
     //copy data back
-    cudaMemcpy(&h_data[0], d_data_out, byte_size, cudaMemcpyDeviceToHost);
+    CHECK_CUDA(cudaMemcpy(&h_data[0], d_data_out, byte_size, cudaMemcpyDeviceToHost));
 
     //compare results: h_data holds the data transferred from the GPU
     //                 h_data_out holds the data computed on the CPU  
@@ -217,8 +225,9 @@ int main(int argc, char** argv) {
     std::cout << std::endl;
 #endif     
     //free resources
-    cudaFree(d_data_out);
-    cudaFree(d_data_in);
+    CHECK_CUDA(cudaFree(d_data_out));
+    CHECK_CUDA(cudaFree(d_data_in));
+    CHECK_CUDA(cudaDeviceReset()); 
     return 0;
 }
 
