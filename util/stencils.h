@@ -28,7 +28,7 @@ struct laplacian_3d {
                  const int row_stride,
                  const int slice_stride) const {  
 #if __CUDA_ARCH__ >= 35 && LDG
-        // accessing directly *seems* to give a ~0.8 performance
+        // accessing directly *seems* to give a ~0.8 % performance
         // increase, but hard to notice given the variability of
         // the timing         
         // const T v4 = __ldg(p + row_stride);
