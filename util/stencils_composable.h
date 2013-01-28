@@ -5,13 +5,33 @@
 
 #include "stencil.h"
 
-struct accessor {
-    template <typename T>
+
+
+template < typename RetT,
+           int X_MIN_OFF = 0, int Y_MIN_OFF = 0, int Z_MIN_OFF = 0,
+           int X_MAX_OFF = 0, int Y_MAX_OFF = 0, int Z_MAX_OFF = 0 >
+struct stencil {
+    typedef return_type = RetT;
+    enum { x_min_off = X_MIN_OFF... };
+    enum { x_extent = X_MAX_OFF - X_MIN_OFF ...};
+};
+//allows to treat leaf accessors(the ones that return data)
+//the same as stencils and by doing so it permits to compose
+//stencils at will
+struct dummy_accessor_type {
+};
+
+template < typename T >
+struct accessor : stencil< T >{
+    typedef stencil< T >::return_type return_type;
+    template < typename U,
+               typename AccessorT = dummy_accessor_type >
     __host__ __device__
-    T operator()(const T* grid,
-                 int x, int, y, int z,
-                 const dim3& grid_size) const {
-        return grid_3d_read(grid, x, y, z, grid_size);
+    return_type operator()(const U* grid,
+                 const dim3& xyz,
+                 const dim3& grid_size,
+                 const AccessorT& acc = AccessorT()) const {
+        return return_type(grid_3d_read(grid, xyz.x, xyz.y, xyz.z, grid_size));
     }
     template <typename T>
     __host__ __device__
@@ -48,10 +68,12 @@ struct surface_accessor {
 #ifdef ENABLE_TEXTURE
 template < typename T >
 struct texture_accessor {
+    template < typename AccessorT = dummy_accessor_type>
     __device__
     T operator()(const T* grid,
                  const dim3& center,
-                 const dim3& grid_size) const {
+                 const dim3& grid_size,
+                 const AccessorT& accessor = AccessorT()) const {
         return tex3D(in_texture,
                      center.x,
                      center.y,
@@ -82,10 +104,10 @@ struct composite_stencil {
     template < typename T > 
     __host__ __device__
     T operator()(const T* grid,
-                 const AccessorT& gv, 
                  const dim3& center,
-                 const dim3& grid_size) const {
-        return s1_(grid, s2_, center, grid_size);
+                 const dim3& grid_size,
+                 const AccessorT& accessor ) const {
+        return s1_(grid, center, grid_size, s2_);
     S1 s1_;
     S2 s2_;     
 };
@@ -94,9 +116,10 @@ struct laplacian_3d {
     template < typename T, typename AccessorT > 
     __host__ __device__
     T operator()(const T* grid,
-                 const AccessorT& gv, //get value through accessor 
                  const dim3& center,
-                 const dim3& grid_size) const {
+                 const dim3& grid_size,
+                 const AccessorT& gv //get value through accessor ) 
+                ) const {
         
         return T(-6) * gv(grid, center.x, center.y, center.z, grid_size)
              + gv(grid, center.x + 1, center.y, center.z, grid_size)

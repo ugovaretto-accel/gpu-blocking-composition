@@ -64,3 +64,43 @@ void grid_3d_write(T* data, const T& v, int x, int y, int z,
 	data[x + grid_size.x * (y + grid_size.y * z)] = v;
 }
 
+template< typename T >
+__host__ __device__
+T grid_read(const T* p) {
+#if __CUDA_ARCH__ >= 350 && LDG
+    return __ldg(p);    	
+#else
+    return *p; 
+#endif
+}
+
+template< typename T >
+__host__ __device__
+T grid_read(const T* p, int xoff) {
+#if __CUDA_ARCH__ >= 350 && LDG
+    return __ldg(p + xoff);        
+#else
+    return p[xoff]; 
+#endif
+}
+
+template< typename T >
+__host__ __device__
+T grid_read(const T* p, int xoff, int yoff, int row_offset) {
+#if __CUDA_ARCH__ >= 350 && LDG
+    return __ldg(p + xoff + yoff * row_offset);        
+#else
+    return p[xoff + yoff * row_offset]; 
+#endif
+}
+
+template< typename T >
+__host__ __device__
+T grid_read(const T* p, int xoff, int yoff, int zoff,
+            int row_offset, int slice_stride) {
+#if __CUDA_ARCH__ >= 350 && LDG
+    return __ldg(p + xoff + yoff * row_offset + zoff * slice_stride);        
+#else
+    return p[xoff + yoff * row_offset + zoff * slice_stride]; 
+#endif
+}

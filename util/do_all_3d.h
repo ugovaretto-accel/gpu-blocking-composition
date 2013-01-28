@@ -169,26 +169,34 @@ __global__ void do_all_3d_2_gpu(const T* in,
 //launch with size of 2d core space, iterates on z internally
 template < typename T, typename FunT > 
 __global__ void do_all_3d_2_z_gpu(const T* in,
-	                              T* out,
-	                              const dim3 offset,
+	                                T* out,
+	                                const dim3 offset,
 /*core space + 2 * offset*/       const dim3 global_grid_size, 
-	                              FunT f) {
-    const int slice_stride = global_grid_size.x * global_grid_size.y;
+	                                FunT f) {
+    const ptrdiff_t slice_stride = global_grid_size.x * global_grid_size.y;
     const int x = blockDim.x * blockIdx.x + threadIdx.x + offset.x;
     const int y = blockDim.y * blockIdx.y + threadIdx.y + offset.y;
     const int xy = x + global_grid_size.x * y + offset.z * slice_stride;
-    const int bound = xy + (global_grid_size.z - 2 * offset.z) * slice_stride;
-    // int idx = xy + offset.z * slice_stride; 
-    // for(int k = 0; k < bound; ++k) {
-    //     idx += slice_stride;
-    //     out[idx] = f(in, idx/*dim3(x, y, k + offset.z)*/,
-    //                  global_grid_size);
-    // }
-    for(int idx = xy; idx != bound; idx += slice_stride) {
-        out[idx] = f(in + idx,
-                     global_grid_size.x, slice_stride);
+#ifdef UNOPTIMIZED_ITERATION
+    int idx = xy; 
+    for(int k = 0; k != (global_grid_size.z - 2 * offset.z); ++k) {
+        out[idx] = f(in, dim3(x, y, k + offset.z), global_grid_size);
+        idx += slice_stride;
     }
-    
+#else
+    const int bound = xy + (global_grid_size.z - 2 * offset.z) * slice_stride;
+    const T* b = in + bound;
+    const ptrdiff_t d = out - in; //out = d + in;
+    in += xy; 
+    for(; in != b; in += slice_stride) {
+        out = const_cast<T*>(in+d);
+        *out = f(in, global_grid_size.x, slice_stride);
+    }    
+    //for(int idx = xy; idx != bound; idx += slice_stride) {
+    //    out[idx] = f(in,
+    //                 global_grid_size.x, slice_stride);
+    //}
+#endif    
 }
 //launch with size of 2d core space, iterates on x internally
 template < typename T, typename FunT > 
