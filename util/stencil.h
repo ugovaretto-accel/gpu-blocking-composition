@@ -16,10 +16,14 @@ template < typename T >
 __host__ __device__
 T grid_3d_value_offset(const T* data,
 	                   const dim3& center,
+#ifdef PTRDIFF_T                       
+                       ptrdiff_t xoff, ptrdiff_t yoff, ptrdiff_t zoff,
+#else                       
 	                   int xoff, int yoff, int zoff,
+#endif                       
                        const dim3& grid_size) {
 #if __CUDA_ARCH__ >= 35 && LDG
-	const int idx = center.x + xoff
+	const ptrdiff_t idx = center.x + xoff
 	                      + grid_size.x * (yoff + center.y
 	                      + grid_size.y * (zoff + center.z));            
 	return __ldg(data + idx);
@@ -32,11 +36,11 @@ T grid_3d_value_offset(const T* data,
 template < typename T >
 __host__ __device__
 T grid_3d_value_offset(const T* data,
-	                   int center,
-	                   int xoff, int yoff, int zoff,
+	                   ptrdiff_t center,
+	                   ptrdiff_t xoff, ptrdiff_t yoff, ptrdiff_t zoff,
                        const dim3& grid_size) {
 #if __CUDA_ARCH__ >= 35 && LDG
-	const int idx = center + xoff
+	const ptrdiff_t idx = center + xoff
 	                   + grid_size.x * (yoff + grid_size.y * zoff);                  
 	return __ldg(data + idx);
 #else
@@ -48,9 +52,10 @@ T grid_3d_value_offset(const T* data,
 
 template< typename T >
 __host__ __device__
-T grid_3d_read(const T* data, int x, int y, int z, const dim3& grid_size) {
+T grid_3d_read(const T* data, ptrdiff_t x, ptrdiff_t y, ptrdiff_t z,
+               const dim3& grid_size) {
 #if __CUDA_ARCH__ >= 350 && LDG	
-	const int idx = x + grid_size.x * (y + grid_size.y * z);            
+	const ptrdiff_t idx = x + grid_size.x * (y + grid_size.y * z);            
 	return __ldg(data + idx);
 #else
 	return data[x + grid_size.x * (y + grid_size.y * z)];
@@ -59,7 +64,7 @@ T grid_3d_read(const T* data, int x, int y, int z, const dim3& grid_size) {
 
 template< typename T >
 __host__ __device__
-void grid_3d_write(T* data, const T& v, int x, int y, int z,
+void grid_3d_write(T* data, const T& v, ptrdiff_t x, ptrdiff_t y, ptrdiff_t z,
 	               const dim3& grid_size) {
 	data[x + grid_size.x * (y + grid_size.y * z)] = v;
 }
@@ -86,7 +91,7 @@ T grid_read(const T* p, int xoff) {
 
 template< typename T >
 __host__ __device__
-T grid_read(const T* p, int xoff, int yoff, int row_offset) {
+T grid_read(const T* p, int xoff, int yoff, ptrdiff_t row_offset) {
 #if __CUDA_ARCH__ >= 350 && LDG
     return __ldg(p + xoff + yoff * row_offset);        
 #else
@@ -97,7 +102,7 @@ T grid_read(const T* p, int xoff, int yoff, int row_offset) {
 template< typename T >
 __host__ __device__
 T grid_read(const T* p, int xoff, int yoff, int zoff,
-            int row_offset, int slice_stride) {
+            ptrdiff_t row_offset, ptrdiff_t slice_stride) {
 #if __CUDA_ARCH__ >= 350 && LDG
     return __ldg(p + xoff + yoff * row_offset + zoff * slice_stride);        
 #else

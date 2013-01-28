@@ -25,8 +25,8 @@ struct laplacian_3d {
     template < typename T > 
     __device__
     T operator()(const T* p, 
-                 const int row_stride,
-                 const int slice_stride) const {  
+                 const ptrdiff_t& row_stride,
+                 const ptrdiff_t& slice_stride) const {  
 #if __CUDA_ARCH__ >= 35 && LDG
         // accessing directly *seems* to give a ~0.8 % performance
         // increase, but hard to notice given the variability of
