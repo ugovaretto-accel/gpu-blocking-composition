@@ -194,6 +194,12 @@ struct composite_stencil :
     mutable S2 s2_;     
 };
 
+
+template < typename S1, typename S2 >
+composite_stencil< S1, S2 > operator >>=(const S1& s1, const S2& s2) {
+    return composite_stencil< S1, S2 >(s1, s2);
+}
+
 //struct index3d {
 //    int x, y, z;
 //};
