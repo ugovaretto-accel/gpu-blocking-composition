@@ -27,7 +27,7 @@ struct laplacian_3d {
     T operator()(const T* p, 
                  const ptrdiff_t& row_stride,
                  const ptrdiff_t& slice_stride) const {  
-#if __CUDA_ARCH__ >= 35 && LDG
+#if __CUDA_ARCH__ >= 350 && LDG
         // accessing directly *seems* to give a ~0.8 % performance
         // increase, but hard to notice given the variability of
         // the timing         
@@ -74,7 +74,7 @@ struct diffusion_3d {
     T operator()(const T* grid,
                  int row_stride,
                  int slice_stride) const {
-#if __CUDA_ARCH__ >= 35 && LDG
+#if __CUDA_ARCH__ >= 350 && LDG
         const T v = __ldg(grid);
 #else       
         const T v = grid[0]; 
