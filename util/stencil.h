@@ -22,7 +22,7 @@ T grid_3d_value_offset(const T* data,
 	                   int xoff, int yoff, int zoff,
 #endif                       
                        const dim3& grid_size) {
-#if __CUDA_ARCH__ >= 35 && LDG
+#if __CUDA_ARCH__ >= 350 && LDG
 	const ptrdiff_t idx = center.x + xoff
 	                      + grid_size.x * (yoff + center.y
 	                      + grid_size.y * (zoff + center.z));            
@@ -39,7 +39,7 @@ T grid_3d_value_offset(const T* data,
 	                   ptrdiff_t center,
 	                   ptrdiff_t xoff, ptrdiff_t yoff, ptrdiff_t zoff,
                        const dim3& grid_size) {
-#if __CUDA_ARCH__ >= 35 && LDG
+#if __CUDA_ARCH__ >= 350 && LDG
 	const ptrdiff_t idx = center + xoff
 	                   + grid_size.x * (yoff + grid_size.y * zoff);                  
 	return __ldg(data + idx);
